@@ -1,4 +1,4 @@
-#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), no_std, no_main)]
 #![feature(min_specialization)]
 
 #[openbrush::contract]
@@ -12,11 +12,8 @@ pub mod factory {
     };
     use openbrush::traits::Storage;
     use pair_contract::pair::PairContractRef;
-    use uniswap_v2::{
-        impls::factory::*,
-        traits::factory::*,
-    };
 
+    use uniswap_v2::impls::factory::{factory::*, data };
     #[ink(event)]
     pub struct PairCreated {
         #[ink(topic)]
@@ -35,8 +32,7 @@ pub mod factory {
     }
 
     impl Factory for FactoryContract {}
-
-    impl factory::Internal for FactoryContract {
+    impl uniswap_v2::impls::factory::factory::Internal for FactoryContract {
         fn _instantiate_pair(&mut self, salt_bytes: &[u8]) -> Result<AccountId, FactoryError> {
             let pair_hash = self.factory.pair_contract_code_hash;
             let pair = match PairContractRef::new()
@@ -85,7 +81,6 @@ pub mod factory {
             env::test::default_accounts,
             primitives::Hash,
         };
-        use openbrush::traits::AccountIdExt;
 
         use super::*;
 
@@ -93,7 +88,7 @@ pub mod factory {
         fn initialize_works() {
             let accounts = default_accounts::<ink::env::DefaultEnvironment>();
             let factory = FactoryContract::new(accounts.alice, Hash::default());
-            assert!(factory.factory.fee_to.is_zero());
+            assert!(factory.factory.fee_to == [0u8; 32].into());
         }
     }
 }

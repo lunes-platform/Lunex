@@ -13,6 +13,7 @@ pub use crate::{
     impls::pair::*,
     traits::pair::*,
 };
+use ink::primitives::AccountId;
 use openbrush::{
     contracts::{
         ownable::*,
@@ -22,89 +23,58 @@ use openbrush::{
     },
     modifiers,
     traits::{
-        AccountId,
-        AccountIdExt,
         Balance,
         Storage,
         Timestamp,
-        ZERO_ADDRESS,
     },
 };
 use primitive_types::U256;
 use sp_arithmetic::{
-    traits::IntegerSquareRoot,
+    traits::{
+        IntegerSquareRoot,
+        Zero,
+    },
     FixedPointNumber,
     FixedU128,
 };
 
 pub const MINIMUM_LIQUIDITY: u128 = 1000;
 
-pub trait Internal {
-    fn _mint_fee(&mut self, reserve_0: Balance, reserve_1: Balance) -> Result<bool, PairError>;
-
-    fn _update(
-        &mut self,
-        balance_0: Balance,
-        balance_1: Balance,
-        reserve_0: Balance,
-        reserve_1: Balance,
-    ) -> Result<(), PairError>;
-
-    fn _emit_mint_event(&self, _sender: AccountId, _amount_0: Balance, _amount_1: Balance);
-    fn _emit_burn_event(
-        &self,
-        _sender: AccountId,
-        _amount_0: Balance,
-        _amount_1: Balance,
-        _to: AccountId,
-    );
-    fn _emit_swap_event(
-        &self,
-        _sender: AccountId,
-        _amount_0_in: Balance,
-        _amount_1_in: Balance,
-        _amount_0_out: Balance,
-        _amount_1_out: Balance,
-        _to: AccountId,
-    );
-    fn _emit_sync_event(&self, reserve_0: Balance, reserve_1: Balance);
-}
-
-impl<
-        T: Storage<data::Data>
-            + Storage<ownable::Data>
-            + Storage<psp22::Data>
-            + Storage<reentrancy_guard::Data>,
-    > Pair for T
+#[openbrush::trait_definition]
+pub trait Pair:
+    Storage<data::Data>
+    + Storage<ownable::Data>
+    + Storage<psp22::Data>
+    + psp22::Internal
+    + Storage<reentrancy_guard::Data>
+    + Internal
 {
-    default fn get_reserves(&self) -> (Balance, Balance, Timestamp) {
+    #[ink(message)]
+    fn get_reserves(&self) -> (Balance, Balance, Timestamp) {
         (
             self.data::<data::Data>().reserve_0,
             self.data::<data::Data>().reserve_1,
             self.data::<data::Data>().block_timestamp_last,
         )
     }
-    default fn price_0_cumulative_last(&self) -> WrappedU256 {
+    #[ink(message)]
+    fn price_0_cumulative_last(&self) -> WrappedU256 {
         self.data::<data::Data>().price_0_cumulative_last
     }
-
-    default fn price_1_cumulative_last(&self) -> WrappedU256 {
+    #[ink(message)]
+    fn price_1_cumulative_last(&self) -> WrappedU256 {
         self.data::<data::Data>().price_1_cumulative_last
     }
-
+    #[ink(message)]
     #[modifiers(only_owner)]
-    default fn initialize(
-        &mut self,
-        token_0: AccountId,
-        token_1: AccountId,
-    ) -> Result<(), PairError> {
+    fn initialize(&mut self, token_0: AccountId, token_1: AccountId) -> Result<(), PairError> {
         self.data::<data::Data>().token_0 = token_0;
         self.data::<data::Data>().token_1 = token_1;
         Ok(())
     }
-
+    #[ink(message)]
     #[modifiers(non_reentrant)]
-    default fn mint(&mut self, to: AccountId) -> Result<Balance, PairError> {
+    fn mint(&mut self, to: AccountId) -> Result<Balance, PairError> {
         let reserves = self.get_reserves();
         let contract = Self::env().account_id();
         let balance_0 = PSP22Ref::balance_of(&self.data::<data::Data>().token_0, contract);
@@ -117,10 +87,10 @@ impl<
             .ok_or(PairError::SubUnderFlow2)?;
 
         let fee_on = self._mint_fee(reserves.0, reserves.1)?;
-        let total_supply = self.data::<psp22::Data>().supply;
+        let total_supply = self.data::<psp22::Data>().supply.get_or_default();
 
         let liquidity;
-        if total_supply == 0 {
+        if total_supply.is_zero() {
             let liq = amount_0
                 .checked_mul(amount_1)
                 .ok_or(PairError::MulOverFlow1)?;
@@ -128,7 +98,7 @@ impl<
                 .integer_sqrt()
                 .checked_sub(MINIMUM_LIQUIDITY)
                 .ok_or(PairError::SubUnderFlow3)?;
-            self._mint_to(ZERO_ADDRESS.into(), MINIMUM_LIQUIDITY)?;
+            self._mint_to([0u8; 32].into(), MINIMUM_LIQUIDITY)?;
         } else {
             let liquidity_1 = amount_0
                 .checked_mul(total_supply)
@@ -157,9 +127,9 @@ impl<
 
         Ok(liquidity)
     }
-
+    #[ink(message)]
     #[modifiers(non_reentrant)]
-    default fn burn(&mut self, to: AccountId) -> Result<(Balance, Balance), PairError> {
+    fn burn(&mut self, to: AccountId) -> Result<(Balance, Balance), PairError> {
         let reserves = self.get_reserves();
         let contract = Self::env().account_id();
         let token_0 = self.data::<data::Data>().token_0;
@@ -169,7 +139,7 @@ impl<
         let liquidity = self._balance_of(&contract);
 
         let fee_on = self._mint_fee(reserves.0, reserves.1)?;
-        let total_supply = self.data::<psp22::Data>().supply;
+        let total_supply = self.data::<psp22::Data>().supply.get_or_default();
         let amount_0 = liquidity
             .checked_mul(balance_0)
             .ok_or(PairError::MulOverFlow5)?
@@ -204,9 +174,9 @@ impl<
 
         Ok((amount_0, amount_1))
     }
-
+    #[ink(message)]
     #[modifiers(non_reentrant)]
-    default fn swap(
+    fn swap(
         &mut self,
         amount_0_out: Balance,
         amount_1_out: Balance,
@@ -308,9 +278,9 @@ impl<
         );
         Ok(())
     }
-
+    #[ink(message)]
     #[modifiers(non_reentrant)]
-    default fn skim(&mut self, to: AccountId) -> Result<(), PairError> {
+    fn skim(&mut self, to: AccountId) -> Result<(), PairError> {
         let contract = Self::env().account_id();
         let reserve_0 = self.data::<data::Data>().reserve_0;
         let reserve_1 = self.data::<data::Data>().reserve_1;
@@ -334,9 +304,9 @@ impl<
         )?;
         Ok(())
     }
-
+    #[ink(message)]
     #[modifiers(non_reentrant)]
-    default fn sync(&mut self) -> Result<(), PairError> {
+    fn sync(&mut self) -> Result<(), PairError> {
         let contract = Self::env().account_id();
         let reserve_0 = self.data::<data::Data>().reserve_0;
         let reserve_1 = self.data::<data::Data>().reserve_1;
@@ -346,12 +316,12 @@ impl<
         let balance_1 = PSP22Ref::balance_of(&token_1, contract);
         self._update(balance_0, balance_1, reserve_0, reserve_1)
     }
-
-    default fn get_token_0(&self) -> AccountId {
+    #[ink(message)]
+    fn get_token_0(&self) -> AccountId {
         self.data::<data::Data>().token_0
     }
-
-    default fn get_token_1(&self) -> AccountId {
+    #[ink(message)]
+    fn get_token_1(&self) -> AccountId {
         self.data::<data::Data>().token_1
     }
 }
@@ -389,15 +359,14 @@ fn update_cumulative(
     .into();
     (price_cumulative_last_0, price_cumulative_last_1)
 }
-
-impl<T: Storage<data::Data> + Storage<psp22::Data>> Internal for T {
-    default fn _mint_fee(
+pub trait Internal:Storage<data::Data> + psp22::Internal + Storage<psp22::Data> {
+    fn _mint_fee(
         &mut self,
         reserve_0: Balance,
         reserve_1: Balance,
     ) -> Result<bool, PairError> {
-        let fee_to = FactoryRef::fee_to(&self.data::<data::Data>().factory);
-        let fee_on = !fee_to.is_zero();
+        let fee_to: AccountId = FactoryRef::fee_to(&self.data::<data::Data>().factory);
+        let fee_on = fee_to != [0u8; 32].into();
         let k_last: U256 = self.data::<data::Data>().k_last.into();
         if fee_on {
             if !k_last.is_zero() {
@@ -410,7 +379,7 @@ impl<T: Storage<data::Data> + Storage<psp22::Data>> Internal for T {
                     .try_into()
                     .map_err(|_| PairError::CastOverflow2)?;
                 if root_k > root_k_last {
-                    let total_supply = self.data::<psp22::Data>().supply;
+                    let total_supply = self.data::<psp22::Data>().supply.get_or_default();
                     let numerator = total_supply
                         .checked_mul(
                             root_k
@@ -437,7 +406,7 @@ impl<T: Storage<data::Data> + Storage<psp22::Data>> Internal for T {
         Ok(fee_on)
     }
 
-    default fn _update(
+    fn _update(
         &mut self,
         balance_0: Balance,
         balance_1: Balance,
@@ -469,17 +438,15 @@ impl<T: Storage<data::Data> + Storage<psp22::Data>> Internal for T {
         Ok(())
     }
 
-    default fn _emit_mint_event(&self, _sender: AccountId, _amount_0: Balance, _amount_1: Balance) {
-    }
-    default fn _emit_burn_event(
+    fn _emit_mint_event(&self, _sender: AccountId, _amount_0: Balance, _amount_1: Balance);
+    fn _emit_burn_event(
         &self,
         _sender: AccountId,
         _amount_0: Balance,
         _amount_1: Balance,
         _to: AccountId,
-    ) {
-    }
-    default fn _emit_swap_event(
+    );
+    fn _emit_swap_event(
         &self,
         _sender: AccountId,
         _amount_0_in: Balance,
@@ -487,9 +454,8 @@ impl<T: Storage<data::Data> + Storage<psp22::Data>> Internal for T {
         _amount_0_out: Balance,
         _amount_1_out: Balance,
         _to: AccountId,
-    ) {
-    }
-    default fn _emit_sync_event(&self, _reserve_0: Balance, _reserve_1: Balance) {}
+    );
+    fn _emit_sync_event(&self, _reserve_0: Balance, _reserve_1: Balance);
 }
 
 #[cfg(test)]

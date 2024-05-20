@@ -44,36 +44,19 @@ pub use crate::{
     traits::router::*,
 };
 
-pub trait Internal {
-    fn _add_liquidity(
-        &self,
-        token_a: AccountId,
-        token_b: AccountId,
-        amount_a_desired: Balance,
-        amount_b_desired: Balance,
-        amount_a_min: Balance,
-        amount_b_min: Balance,
-    ) -> Result<(Balance, Balance), RouterError>;
-
-    fn _swap(
-        &self,
-        amounts: &Vec<Balance>,
-        path: Vec<AccountId>,
-        to: AccountId,
-    ) -> Result<(), RouterError>;
-}
-
-impl<T: Storage<data::Data>> Router for T {
-    default fn factory(&self) -> AccountId {
+#[openbrush::trait_definition]
+pub trait Router: Storage<data::Data> + Internal{
+    #[ink(message)]
+    fn factory(&self) -> AccountId {
         self.data().factory
     }
-
-    default fn wnative(&self) -> AccountId {
+    #[ink(message)]
+    fn wnative(&self) -> AccountId {
         self.data().wnative
     }
-
+    #[ink(message)]
     #[modifiers(ensure(deadline))]
-    default fn add_liquidity(
+    fn add_liquidity(
         &mut self,
         token_a: AccountId,
         token_b: AccountId,
@@ -104,9 +87,9 @@ impl<T: Storage<data::Data>> Router for T {
 
         Ok((amount_a, amount_b, liquidity))
     }
-
+    #[ink(message, payable)]
     #[modifiers(ensure(deadline))]
-    default fn add_liquidity_native(
+     fn add_liquidity_native(
         &mut self,
         token: AccountId,
         amount_token_desired: Balance,
@@ -139,9 +122,9 @@ impl<T: Storage<data::Data>> Router for T {
         }
         Ok((amount, amount_native, liquidity))
     }
-
+    #[ink(message)]
     #[modifiers(ensure(deadline))]
-    default fn remove_liquidity(
+     fn remove_liquidity(
         &mut self,
         token_a: AccountId,
         token_b: AccountId,
@@ -190,9 +173,9 @@ impl<T: Storage<data::Data>> Router for T {
 
         Ok((amount_a, amount_b))
     }
-
+    #[ink(message)]
     #[modifiers(ensure(deadline))]
-    default fn remove_liquidity_native(
+    fn remove_liquidity_native(
         &mut self,
         token: AccountId,
         liquidity: Balance,
@@ -216,9 +199,9 @@ impl<T: Storage<data::Data>> Router for T {
         safe_transfer_native(to, amount_native)?;
         Ok((amount_token, amount_native))
     }
-
+    #[ink(message)]
     #[modifiers(ensure(deadline))]
-    default fn swap_exact_tokens_for_tokens(
+    fn swap_exact_tokens_for_tokens(
         &mut self,
         amount_in: Balance,
         amount_out_min: Balance,
@@ -242,9 +225,9 @@ impl<T: Storage<data::Data>> Router for T {
         self._swap(&amounts, path, to)?;
         Ok(amounts)
     }
-
+    #[ink(message)]
     #[modifiers(ensure(deadline))]
-    default fn swap_tokens_for_exact_tokens(
+    fn swap_tokens_for_exact_tokens(
         &mut self,
         amount_out: Balance,
         amount_in_max: Balance,
@@ -267,9 +250,9 @@ impl<T: Storage<data::Data>> Router for T {
         self._swap(&amounts, path, to)?;
         Ok(amounts)
     }
-
+    #[ink(message,payable)]
     #[modifiers(ensure(deadline))]
-    default fn swap_exact_native_for_tokens(
+    fn swap_exact_native_for_tokens(
         &mut self,
         amount_out_min: Balance,
         path: Vec<AccountId>,
@@ -295,9 +278,9 @@ impl<T: Storage<data::Data>> Router for T {
         self._swap(&amounts, path, to)?;
         Ok(amounts)
     }
-
+    #[ink(message)]
     #[modifiers(ensure(deadline))]
-    default fn swap_tokens_for_exact_native(
+    fn swap_tokens_for_exact_native(
         &mut self,
         amount_out: Balance,
         amount_in_max: Balance,
@@ -325,7 +308,7 @@ impl<T: Storage<data::Data>> Router for T {
         safe_transfer_native(to, amounts[amounts.len() - 1])?;
         Ok(amounts)
     }
-
+    #[ink(message)]
     #[modifiers(ensure(deadline))]
     fn swap_exact_tokens_for_native(
         &mut self,
@@ -355,7 +338,7 @@ impl<T: Storage<data::Data>> Router for T {
         safe_transfer_native(to, amounts[amounts.len() - 1])?;
         Ok(amounts)
     }
-
+    #[ink(message, payable)]
     #[modifiers(ensure(deadline))]
     fn swap_native_for_exact_tokens(
         &mut self,
@@ -386,8 +369,8 @@ impl<T: Storage<data::Data>> Router for T {
         }
         Ok(amounts)
     }
-
-    default fn quote(
+    #[ink(message)]
+    fn quote(
         &self,
         amount_a: Balance,
         reserve_a: Balance,
@@ -395,8 +378,8 @@ impl<T: Storage<data::Data>> Router for T {
     ) -> Result<Balance, RouterError> {
         Ok(quote(amount_a, reserve_a, reserve_b)?)
     }
-
-    default fn get_amount_out(
+    #[ink(message)]
+    fn get_amount_out(
         &self,
         amount_in: Balance,
         reserve_in: Balance,
@@ -404,8 +387,8 @@ impl<T: Storage<data::Data>> Router for T {
     ) -> Result<Balance, RouterError> {
         Ok(get_amount_out(amount_in, reserve_in, reserve_out)?)
     }
-
-    default fn get_amount_in(
+    #[ink(message)]
+    fn get_amount_in(
         &self,
         amount_out: Balance,
         reserve_in: Balance,
@@ -413,16 +396,16 @@ impl<T: Storage<data::Data>> Router for T {
     ) -> Result<Balance, RouterError> {
         Ok(get_amount_in(amount_out, reserve_in, reserve_out)?)
     }
-
-    default fn get_amounts_out(
+    #[ink(message)]
+    fn get_amounts_out(
         &self,
         amount_in: Balance,
         path: Vec<AccountId>,
     ) -> Result<Vec<Balance>, RouterError> {
         Ok(get_amounts_out(&self.data().factory, amount_in, &path)?)
     }
-
-    default fn get_amounts_in(
+    #[ink(message)]
+    fn get_amounts_in(
         &self,
         amount_out: Balance,
         path: Vec<AccountId>,
@@ -431,7 +414,7 @@ impl<T: Storage<data::Data>> Router for T {
     }
 }
 
-impl<T: Storage<data::Data>> Internal for T {
+pub trait Internal: Storage<data::Data> {
     fn _add_liquidity(
         &self,
         token_a: AccountId,

@@ -1,12 +1,8 @@
-use openbrush::traits::{
-    AccountId,
-    ZERO_ADDRESS,
-};
+use openbrush::traits::AccountId;
 
-pub const STORAGE_KEY: u32 = openbrush::storage_unique_key!(Data);
 
 #[derive(Debug)]
-#[openbrush::upgradeable_storage(STORAGE_KEY)]
+#[openbrush::storage_item]
 pub struct Data {
     pub factory: AccountId,
     pub wnative: AccountId,
@@ -15,8 +11,8 @@ pub struct Data {
 impl Default for Data {
     fn default() -> Self {
         Self {
-            factory: ZERO_ADDRESS.into(),
-            wnative: ZERO_ADDRESS.into(),
+            factory: [0u8; 32].into(),
+            wnative: [0u8; 32].into(),
         }
     }
 }

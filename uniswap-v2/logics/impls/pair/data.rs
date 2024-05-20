@@ -2,14 +2,13 @@ use crate::traits::types::WrappedU256;
 use openbrush::traits::{
     AccountId,
     Balance,
-    Timestamp,
-    ZERO_ADDRESS,
+    Timestamp
 };
 
 pub const STORAGE_KEY: u32 = openbrush::storage_unique_key!(Data);
 
 #[derive(Debug)]
-#[openbrush::upgradeable_storage(STORAGE_KEY)]
+#[openbrush::storage_item]
 pub struct Data {
     pub factory: AccountId,
     pub token_0: AccountId,
@@ -25,9 +24,9 @@ pub struct Data {
 impl Default for Data {
     fn default() -> Self {
         Self {
-            factory: ZERO_ADDRESS.into(),
-            token_0: ZERO_ADDRESS.into(),
-            token_1: ZERO_ADDRESS.into(),
+            factory: [0u8; 32].into(),
+            token_0: [0u8; 32].into(),
+            token_1: [0u8; 32].into(),
             reserve_0: 0,
             reserve_1: 0,
             block_timestamp_last: 0,

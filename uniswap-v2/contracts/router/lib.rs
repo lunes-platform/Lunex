@@ -1,21 +1,17 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-#![feature(min_specialization)]
+#![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[openbrush::contract]
 pub mod router {
     use openbrush::traits::Storage;
-    use uniswap_v2::{
-        impls::router::*,
-        traits::router::*,
-    };
-
+    
+    use uniswap_v2::impls::router::{router::*, data };
     #[ink(storage)]
     #[derive(Default, Storage)]
     pub struct RouterContract {
         #[storage_field]
         router: data::Data,
     }
-
+    impl uniswap_v2::impls::router::router::Internal for RouterContract {}
     impl Router for RouterContract {}
 
     impl RouterContract {

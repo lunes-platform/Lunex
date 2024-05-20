@@ -8,7 +8,6 @@ use crate::{
 use ink::prelude::vec::Vec;
 use openbrush::traits::{
     AccountId,
-    AccountIdExt,
     Balance,
 };
 
@@ -35,8 +34,7 @@ pub fn sort_tokens(
     } else {
         (token_b, token_a)
     };
-
-    ensure!(!token_0.is_zero(), HelperError::ZeroAddress);
+    ensure!(token_0!=[0u8; 32].into(), HelperError::ZeroAddress);
 
     Ok((token_0, token_1))
 }

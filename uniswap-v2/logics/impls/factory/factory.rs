@@ -13,32 +13,29 @@ use openbrush::{
     modifiers,
     traits::{
         AccountId,
-        AccountIdExt,
         Storage,
     },
 };
+#[openbrush::trait_definition]
+pub trait Factory: Storage<data::Data> + Internal{
 
-impl<T> Factory for T
-where
-    T: Internal,
-    T: Storage<data::Data>,
-{
-    default fn all_pairs(&self, pid: u64) -> Option<AccountId> {
+    #[ink(message)]
+    fn all_pairs(&self, pid: u64) -> Option<AccountId> {
         self.data::<data::Data>()
             .all_pairs
             .get(pid as usize)
             .cloned()
     }
-
-    default fn all_pairs_length(&self) -> u64 {
+    #[ink(message)]
+    fn all_pairs_length(&self) -> u64 {
         self.data::<data::Data>().all_pairs.len() as u64
     }
-
-    default fn pair_contract_code_hash(&self) -> Hash {
+    #[ink(message)]
+    fn pair_contract_code_hash(&self) -> Hash {
         self.data::<data::Data>().pair_contract_code_hash
     }
-
-    default fn create_pair(
+    #[ink(message)]
+    fn create_pair(
         &mut self,
         token_a: AccountId,
         token_b: AccountId,
@@ -49,7 +46,7 @@ where
         } else {
             (token_b, token_a)
         };
-        ensure!(!token_pair.0.is_zero(), FactoryError::ZeroAddress);
+        ensure!(token_pair.0!=[0u8; 32].into(), FactoryError::ZeroAddress);
         ensure!(
             self.data::<data::Data>()
                 .get_pair
@@ -80,28 +77,28 @@ where
 
         Ok(pair_contract)
     }
-
+    #[ink(message)]
     #[modifiers(only_fee_setter)]
-    default fn set_fee_to(&mut self, fee_to: AccountId) -> Result<(), FactoryError> {
+    fn set_fee_to(&mut self, fee_to: AccountId) -> Result<(), FactoryError> {
         self.data::<data::Data>().fee_to = fee_to;
         Ok(())
     }
-
+    #[ink(message)]
     #[modifiers(only_fee_setter)]
-    default fn set_fee_to_setter(&mut self, fee_to_setter: AccountId) -> Result<(), FactoryError> {
+    fn set_fee_to_setter(&mut self, fee_to_setter: AccountId) -> Result<(), FactoryError> {
         self.data::<data::Data>().fee_to_setter = fee_to_setter;
         Ok(())
     }
-
-    default fn fee_to(&self) -> AccountId {
+    #[ink(message)]
+    fn fee_to(&self) -> AccountId {
         self.data::<data::Data>().fee_to
     }
-
-    default fn fee_to_setter(&self) -> AccountId {
+    #[ink(message)]
+    fn fee_to_setter(&self) -> AccountId {
         self.data::<data::Data>().fee_to_setter
     }
-
-    default fn get_pair(&self, token_a: AccountId, token_b: AccountId) -> Option<AccountId> {
+    #[ink(message)]
+    fn get_pair(&self, token_a: AccountId, token_b: AccountId) -> Option<AccountId> {
         self.data::<data::Data>().get_pair.get(&(token_a, token_b))
     }
 }

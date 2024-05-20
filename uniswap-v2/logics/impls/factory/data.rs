@@ -4,16 +4,10 @@ use ink::{
 };
 use openbrush::{
     storage::Mapping,
-    traits::{
-        AccountId,
-        ZERO_ADDRESS,
-    },
+    traits::AccountId
 };
-
-pub const STORAGE_KEY: u32 = openbrush::storage_unique_key!(Data);
-
 #[derive(Debug)]
-#[openbrush::upgradeable_storage(STORAGE_KEY)]
+#[openbrush::storage_item]
 pub struct Data {
     pub fee_to: AccountId,
     pub fee_to_setter: AccountId,
@@ -25,8 +19,8 @@ pub struct Data {
 impl Default for Data {
     fn default() -> Self {
         Self {
-            fee_to: ZERO_ADDRESS.into(),
-            fee_to_setter: ZERO_ADDRESS.into(),
+            fee_to: [0u8; 32].into(),
+            fee_to_setter: [0u8; 32].into(),
             get_pair: Default::default(),
             all_pairs: Vec::new(),
             pair_contract_code_hash: Default::default(),
