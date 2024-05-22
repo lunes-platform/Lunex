@@ -1,4 +1,4 @@
-# DEX - UniswapV2
+# DEX - Lunex
 This folder contains the line by line implementation of [uniswap-v2 core](https://github.com/Uniswap/v2-core) and [uniswap-v2 periphery](https://github.com/Uniswap/v2-periphery) with its tests.   
 First version: [wasm-showcase-dapps](https://github.com/AstarNetwork/wasm-showcase-dapps)
 
