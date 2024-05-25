@@ -56,7 +56,7 @@ pub mod token {
             instance
         }
         #[ink(message)]
-        pub fn emit_transfer_event(
+        pub fn _emit_transfer_event(
             &self,
             from: Option<AccountId>,
             to: Option<AccountId>,
@@ -69,7 +69,7 @@ pub mod token {
             });
         }
         #[ink(message)]
-        pub fn emit_approval_event(&self, owner: AccountId, spender: AccountId, amount: Balance) {
+        pub fn _emit_approval_event(&self, owner: AccountId, spender: AccountId, amount: Balance) {
             self.env().emit_event(Approval {
                 owner,
                 spender,

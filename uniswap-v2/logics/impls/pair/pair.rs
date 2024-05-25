@@ -38,14 +38,13 @@ use sp_arithmetic::{
     FixedU128,
 };
 
-pub const MINIMUM_LIQUIDITY: u128 = 1000;
+pub const MINIMUM_LIQUIDITY: u128 = 1000000;
 
 #[openbrush::trait_definition]
 pub trait Pair:
     Storage<data::Data>
     + Storage<ownable::Data>
     + Storage<psp22::Data>
-    + psp22::Internal
     + Storage<reentrancy_guard::Data>
     + Internal
 {
