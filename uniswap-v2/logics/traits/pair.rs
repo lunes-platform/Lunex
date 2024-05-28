@@ -16,6 +16,8 @@ use openbrush::{
 
 use super::types::WrappedU256;
 
+use ink::prelude::vec::Vec;
+
 #[openbrush::wrapper]
 pub type PairRef = dyn Pair;
 
@@ -58,6 +60,15 @@ pub trait Pair {
 
     #[ink(message)]
     fn get_token_1(&self) -> AccountId;
+
+    #[ink(message)]
+    fn transfer_from(
+        &mut self,
+        from: AccountId,
+        to: AccountId,
+        value: Balance,
+        data: Vec<u8>,
+    ) -> Result<(), PSP22Error>;
 }
 
 #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]

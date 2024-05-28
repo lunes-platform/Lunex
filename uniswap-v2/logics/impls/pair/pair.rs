@@ -9,6 +9,7 @@ use crate::{
         types::WrappedU256,
     },
 };
+use ink::prelude::vec::Vec;
 pub use crate::{
     impls::pair::*,
     traits::pair::*,
@@ -135,7 +136,7 @@ pub trait Pair:
         let token_1 = self.data::<data::Data>().token_1;
         let mut balance_0 = PSP22Ref::balance_of(&token_0, contract);
         let mut balance_1 = PSP22Ref::balance_of(&token_1, contract);
-        let liquidity = self._balance_of(&contract);
+        let liquidity = self._balance_of(contract);
 
         let fee_on = self._mint_fee(reserves.0, reserves.1)?;
         let total_supply = self.data::<psp22::Data>().supply.get_or_default();
@@ -323,6 +324,26 @@ pub trait Pair:
     fn get_token_1(&self) -> AccountId {
         self.data::<data::Data>().token_1
     }
+    #[ink(message)]
+    fn transfer_from(
+        &mut self,
+        from: AccountId,
+        to: AccountId,
+        value: Balance,
+        data: Vec<u8>,
+    ) -> Result<(), PSP22Error> {
+        let caller = Self::env().caller();
+        let allowance = self._allowance(from, caller);
+
+        // In uniswapv2 max allowance never decrease
+        if allowance != u128::MAX {
+            ensure!(allowance >= value, PSP22Error::InsufficientAllowance);
+            self._approve_from_to(from, caller, allowance - value)?;
+        }
+        self._transfer_from_to(from, to, value, data)?;
+        Ok(())
+    }
+    
 }
 
 fn min(x: u128, y: u128) -> u128 {
@@ -358,7 +379,8 @@ fn update_cumulative(
     .into();
     (price_cumulative_last_0, price_cumulative_last_1)
 }
-pub trait Internal:Storage<data::Data> + psp22::Internal + Storage<psp22::Data> {
+pub trait Internal:Storage<data::Data> +  Storage<psp22::Data> {
+    
     fn _mint_fee(
         &mut self,
         reserve_0: Balance,
@@ -436,7 +458,31 @@ pub trait Internal:Storage<data::Data> + psp22::Internal + Storage<psp22::Data> 
         self._emit_sync_event(balance_0, balance_1);
         Ok(())
     }
+    fn _emit_approval_event(&self, owner: AccountId, spender: AccountId, amount: Balance);
 
+    // in uniswapv2 no check for zero account
+    fn _mint_to(&mut self, account: AccountId, amount: Balance) -> Result<(), PSP22Error>;
+
+    fn _burn_from(&mut self, account: AccountId, amount: Balance) -> Result<(), PSP22Error>;
+    fn _approve_from_to(
+        &mut self,
+        owner: AccountId,
+        spender: AccountId,
+        amount: Balance,
+    ) -> Result<(), PSP22Error>;
+    fn _transfer_from_to(
+        &mut self,
+        from: AccountId,
+        to: AccountId,
+        amount: Balance,
+        _data: Vec<u8>,
+    ) -> Result<(), PSP22Error>;
+    fn _emit_transfer_event(
+        &self,
+        from: Option<AccountId>,
+        to: Option<AccountId>,
+        amount: Balance,
+    );
     fn _emit_mint_event(&self, _sender: AccountId, _amount_0: Balance, _amount_1: Balance);
     fn _emit_burn_event(
         &self,
@@ -455,6 +501,8 @@ pub trait Internal:Storage<data::Data> + psp22::Internal + Storage<psp22::Data> 
         _to: AccountId,
     );
     fn _emit_sync_event(&self, _reserve_0: Balance, _reserve_1: Balance);
+    fn _allowance(&self,from: AccountId, to: AccountId) -> Balance;
+    fn _balance_of(&self, account: AccountId)-> Balance;
 }
 
 #[cfg(test)]
