@@ -1,12 +1,9 @@
 use crate::traits::wnative::WnativeRef;
-use ink::{
-    env::DefaultEnvironment,
-    prelude::vec::Vec,
-};
+use ink::env::DefaultEnvironment;
+use crate::traits::extension_lunes::Psp22ExtensionRef;
 use openbrush::{
     contracts::psp22::{
         PSP22Error,
-        PSP22Ref,
     },
     traits::{
         AccountId,
@@ -17,7 +14,7 @@ use openbrush::{
 
 #[inline]
 pub fn safe_transfer(token: AccountId, to: AccountId, value: Balance) -> Result<(), PSP22Error> {
-    PSP22Ref::transfer(&token, to, value, Vec::new())
+    Psp22ExtensionRef::transfer(&token, to, value).map_err(|_| PSP22Error::Custom(String::from("transfer failed")))
 }
 
 pub fn safe_transfer_native(to: AccountId, value: Balance) -> Result<(), TransferHelperError> {
@@ -32,7 +29,7 @@ pub fn safe_transfer_from(
     to: AccountId,
     value: Balance,
 ) -> Result<(), PSP22Error> {
-    PSP22Ref::transfer_from(&token, from, to, value, Vec::new())
+    Psp22ExtensionRef::transfer_from(&token, from, to, value).map_err(|_| PSP22Error::Custom(String::from("transfer failed")))
 }
 
 #[inline]

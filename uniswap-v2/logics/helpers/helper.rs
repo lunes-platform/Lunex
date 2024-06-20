@@ -95,7 +95,7 @@ pub fn get_amount_out(
         HelperError::InsufficientLiquidity
     );
 
-    let amount_in_with_fee = casted_mul(amount_in, 997);
+    let amount_in_with_fee = casted_mul(amount_in, 999);
 
     let numerator = amount_in_with_fee
         .checked_mul(reserve_out.into())
@@ -133,7 +133,7 @@ pub fn get_amount_in(
         reserve_out
             .checked_sub(amount_out)
             .ok_or(HelperError::SubUnderFlow)?,
-        997,
+        999,
     );
 
     let amount_in: Balance = numerator

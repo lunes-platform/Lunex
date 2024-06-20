@@ -6,6 +6,7 @@ use crate::{
     },
     traits::{
         factory::FactoryRef,
+        extension_lunes::Psp22ExtensionRef,
         types::WrappedU256,
     },
 };
@@ -20,7 +21,6 @@ use openbrush::{
         ownable::*,
         psp22::*,
         reentrancy_guard::*,
-        traits::psp22::PSP22Ref,
     },
     modifiers,
     traits::{
@@ -39,7 +39,7 @@ use sp_arithmetic::{
     FixedU128,
 };
 
-pub const MINIMUM_LIQUIDITY: u128 = 1000000;
+pub const MINIMUM_LIQUIDITY: u128 = 1000;
 
 #[openbrush::trait_definition]
 pub trait Pair:
@@ -77,8 +77,8 @@ pub trait Pair:
     fn mint(&mut self, to: AccountId) -> Result<Balance, PairError> {
         let reserves = self.get_reserves();
         let contract = Self::env().account_id();
-        let balance_0 = PSP22Ref::balance_of(&self.data::<data::Data>().token_0, contract);
-        let balance_1 = PSP22Ref::balance_of(&self.data::<data::Data>().token_1, contract);
+        let balance_0 = Psp22ExtensionRef::balance_of(&contract,self.data::<data::Data>().token_0);
+        let balance_1 = Psp22ExtensionRef::balance_of(&contract,self.data::<data::Data>().token_1);
         let amount_0 = balance_0
             .checked_sub(reserves.0)
             .ok_or(PairError::SubUnderFlow1)?;
@@ -134,8 +134,9 @@ pub trait Pair:
         let contract = Self::env().account_id();
         let token_0 = self.data::<data::Data>().token_0;
         let token_1 = self.data::<data::Data>().token_1;
-        let mut balance_0 = PSP22Ref::balance_of(&token_0, contract);
-        let mut balance_1 = PSP22Ref::balance_of(&token_1, contract);
+        
+        let mut balance_0 = Psp22ExtensionRef::balance_of(&token_0, contract);
+        let mut balance_1 = Psp22ExtensionRef::balance_of(&token_1, contract);
         let liquidity = self._balance_of(contract);
 
         let fee_on = self._mint_fee(reserves.0, reserves.1)?;
@@ -161,8 +162,8 @@ pub trait Pair:
         safe_transfer(token_0, to, amount_0)?;
         safe_transfer(token_1, to, amount_1)?;
 
-        balance_0 = PSP22Ref::balance_of(&token_0, contract);
-        balance_1 = PSP22Ref::balance_of(&token_1, contract);
+        balance_0 = Psp22ExtensionRef::balance_of(&token_0, contract);
+        balance_1 = Psp22ExtensionRef::balance_of(&token_1, contract);
 
         self._update(balance_0, balance_1, reserves.0, reserves.1)?;
 
@@ -203,8 +204,8 @@ pub trait Pair:
             safe_transfer(token_1, to, amount_1_out)?;
         }
         let contract = Self::env().account_id();
-        let balance_0 = PSP22Ref::balance_of(&token_0, contract);
-        let balance_1 = PSP22Ref::balance_of(&token_1, contract);
+        let balance_0 = Psp22ExtensionRef::balance_of(&token_0, contract);
+        let balance_1 = Psp22ExtensionRef::balance_of(&token_1, contract);
 
         let amount_0_in = if balance_0
             > reserves
@@ -249,12 +250,12 @@ pub trait Pair:
         let balance_0_adjusted = balance_0
             .checked_mul(1000)
             .ok_or(PairError::MulOverFlow7)?
-            .checked_sub(amount_0_in.checked_mul(3).ok_or(PairError::MulOverFlow8)?)
+            .checked_sub(amount_0_in.checked_mul(1).ok_or(PairError::MulOverFlow8)?)
             .ok_or(PairError::SubUnderFlow10)?;
         let balance_1_adjusted = balance_1
             .checked_mul(1000)
             .ok_or(PairError::MulOverFlow9)?
-            .checked_sub(amount_1_in.checked_mul(3).ok_or(PairError::MulOverFlow10)?)
+            .checked_sub(amount_1_in.checked_mul(1).ok_or(PairError::MulOverFlow10)?)
             .ok_or(PairError::SubUnderFlow11)?;
 
         // Cast to U256 to prevent Overflow
@@ -286,8 +287,8 @@ pub trait Pair:
         let reserve_1 = self.data::<data::Data>().reserve_1;
         let token_0 = self.data::<data::Data>().token_0;
         let token_1 = self.data::<data::Data>().token_1;
-        let balance_0 = PSP22Ref::balance_of(&token_0, contract);
-        let balance_1 = PSP22Ref::balance_of(&token_1, contract);
+        let balance_0 = Psp22ExtensionRef::balance_of(&token_0, contract);
+        let balance_1 = Psp22ExtensionRef::balance_of(&token_1, contract);
         safe_transfer(
             token_0,
             to,
@@ -312,8 +313,8 @@ pub trait Pair:
         let reserve_1 = self.data::<data::Data>().reserve_1;
         let token_0 = self.data::<data::Data>().token_0;
         let token_1 = self.data::<data::Data>().token_1;
-        let balance_0 = PSP22Ref::balance_of(&token_0, contract);
-        let balance_1 = PSP22Ref::balance_of(&token_1, contract);
+        let balance_0 = Psp22ExtensionRef::balance_of(&token_0, contract);
+        let balance_1 = Psp22ExtensionRef::balance_of(&token_1, contract);
         self._update(balance_0, balance_1, reserve_0, reserve_1)
     }
     #[ink(message)]
