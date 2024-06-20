@@ -102,6 +102,7 @@ pub enum Psp22Error {
     TokenNameFailed,
     TokenSymbolFailed,
     TokenDecimalsFailed,
+    BalanceNoAllocated,
 }
 
 pub type Result<T> = core::result::Result<T, Psp22Error>;
@@ -151,10 +152,11 @@ impl Environment for CustomEnvironment {
 
 pub mod psp22 {
     use ink::prelude::vec::Vec;
-    use crate::{DefaultAccountId, DefaultBalance, Result};
+    use crate::{DefaultAccountId, DefaultBalance, Psp22Error};
 
     #[ink::trait_definition]
-    pub trait PSP22 {
+    pub trait Psp22ExtensionLunes {
+        
         #[ink(message)]
         fn total_supply(&self) -> DefaultBalance;
 
@@ -165,43 +167,45 @@ pub mod psp22 {
         fn allowance(&self, owner: DefaultAccountId, spender: DefaultAccountId) -> DefaultBalance;
 
         #[ink(message)]
-        fn transfer(&mut self, to: DefaultAccountId, value: DefaultBalance) -> Result<()>;
+        fn transfer(&mut self, to: DefaultAccountId, value: DefaultBalance) -> Result<(), Psp22Error>;
 
         #[ink(message)]
-        fn transfer_from(&mut self, from: DefaultAccountId, to: DefaultAccountId, value: DefaultBalance) -> Result<()>;
+        fn transfer_from(&mut self, from: DefaultAccountId, to: DefaultAccountId, value: DefaultBalance) -> Result<(),Psp22Error>;
 
         #[ink(message)]
-        fn approve(&mut self, spender: DefaultAccountId, value: DefaultBalance) -> Result<()>;
+        fn approve(&mut self, spender: DefaultAccountId, value: DefaultBalance) -> Result<(),Psp22Error>;
 
         #[ink(message)]
-        fn increase_allowance(&mut self, spender: DefaultAccountId, value: DefaultBalance) -> Result<()>;
+        fn increase_allowance(&mut self, spender: DefaultAccountId, value: DefaultBalance) -> Result<(),Psp22Error>;
 
         #[ink(message)]
-        fn decrease_allowance(&mut self, spender: DefaultAccountId, value: DefaultBalance) -> Result<()>;
+        fn decrease_allowance(&mut self, spender: DefaultAccountId, value: DefaultBalance) -> Result<(),Psp22Error>;
 
         // Metadata interfaces
         #[ink(message)]
-        fn token_name(&self) -> Result<Vec<u8>>;
+        fn token_name(&self) -> Result<Vec<u8>,Psp22Error>;
 
         #[ink(message)]
-        fn token_symbol(&self) -> Result<Vec<u8>>;
+        fn token_symbol(&self) -> Result<Vec<u8>,Psp22Error>;
 
         #[ink(message)]
-        fn token_decimals(&self) -> Result<u8>;
+        fn token_decimals(&self) -> Result<u8,Psp22Error>;
 
         #[ink(message)]
-        fn mint(&mut self, to: DefaultAccountId, value: DefaultBalance) -> Result<()>;
+        fn mint(&mut self, to: DefaultAccountId, value: DefaultBalance) -> Result<(),Psp22Error>;
 
         #[ink(message)]
-        fn burn(&mut self, from: DefaultAccountId, value: DefaultBalance) -> Result<()>;
+        fn burn(&mut self, from: DefaultAccountId, value: DefaultBalance) -> Result<(),Psp22Error>;
     }
 }
 
 
 #[ink::contract(env = crate::CustomEnvironment)]
 mod token {
+    use crate::Psp22Error;
+
     use super::{
-        psp22::PSP22,
+        psp22::Psp22ExtensionLunes,
         Result,
         Vec,
         DefaultAccountId,
@@ -225,7 +229,7 @@ mod token {
         }
     }
 
-    impl PSP22 for MyPSP22 {
+    impl Psp22ExtensionLunes for MyPSP22 {
         #[ink(message)]
         fn total_supply(&self) -> DefaultBalance {           
             self.env().extension().total_supply(self.asset_id).unwrap_or(0)
@@ -251,7 +255,7 @@ mod token {
             to: DefaultAccountId,
             value: DefaultBalance,
         ) -> Result<()> {
-            self.env().extension().transfer(self.asset_id, to, value)
+            self.env().extension().transfer(self.asset_id, to, value).map_err(|_| Psp22Error::TransferFailed)
         }
 
         #[ink(message)]
@@ -261,7 +265,7 @@ mod token {
             to: DefaultAccountId,
             value: DefaultBalance,
         ) -> Result<()> {
-            self.env().extension().transfer_from(self.asset_id, from, to, value)
+            self.env().extension().transfer_from(self.asset_id, from, to, value).map_err(|_| Psp22Error::BalanceNoAllocated)
         }
 
         #[ink(message)]
@@ -270,7 +274,7 @@ mod token {
             spender: DefaultAccountId,
             value: DefaultBalance,
         ) -> Result<()> {
-            self.env().extension().approve(self.asset_id, spender, value)
+            self.env().extension().approve(self.asset_id, spender, value).map_err(|_| Psp22Error::BalanceNoAllocated)
         }
 
         #[ink(message)]

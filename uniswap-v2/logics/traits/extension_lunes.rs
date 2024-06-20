@@ -2,7 +2,7 @@ use ink::prelude::vec::Vec;
 
 use openbrush::traits::{AccountId as DefaultAccountId, Balance as DefaultBalance};
 #[openbrush::wrapper]
-pub type Psp22ExtensionRef = dyn Psp22Extension;
+pub type Psp22ExtensionRef = dyn Psp22ExtensionLunes;
 
 #[derive(scale::Encode, scale::Decode)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
@@ -13,7 +13,7 @@ pub enum Psp22Error {
 pub type Result<T> = core::result::Result<T, Psp22Error>;
 
 #[openbrush::trait_definition]
-pub trait Psp22Extension {
+pub trait Psp22ExtensionLunes {
     #[ink(message)]
     fn total_supply(&self) -> DefaultBalance;
 
