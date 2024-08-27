@@ -194,11 +194,13 @@ pub trait Router: Storage<data::Data> + Internal{
             Self::env().account_id(),
             deadline,
         )?;
-        safe_transfer(token, to, amount_token)?;
+        //let _ = safe_transfer(token, to, amount_token);
+        self.data().withdraw_balance.insert(&to, &(token,amount_token));
         unwrap(&wnative, amount_native)?;
         safe_transfer_native(to, amount_native)?;
         Ok((amount_token, amount_native))
     }
+
     #[ink(message)]
     #[modifiers(ensure(deadline))]
     fn swap_exact_tokens_for_tokens(
@@ -404,6 +406,7 @@ pub trait Router: Storage<data::Data> + Internal{
     ) -> Result<Vec<Balance>, RouterError> {
         Ok(get_amounts_out(&self.data().factory, amount_in, &path)?)
     }
+
     #[ink(message)]
     fn get_amounts_in(
         &self,
@@ -411,6 +414,35 @@ pub trait Router: Storage<data::Data> + Internal{
         path: Vec<AccountId>,
     ) -> Result<Vec<Balance>, RouterError> {
         Ok(get_amounts_in(&self.data().factory, amount_out, &path)?)
+    }
+
+    #[ink(message)]
+    fn transfer_liquidity_amount_token(
+        &mut self,
+        token: AccountId,
+        to: AccountId
+    ) -> Result<(), RouterError> {
+        let amount_token = self.data().withdraw_balance.get(&to).unwrap().1;
+        if amount_token == 0 {
+            return Err(RouterError::InsufficientAAmount);
+        }        
+        safe_transfer(token, to, amount_token)?;
+        self.data().withdraw_balance.remove(&to);
+        Ok(())
+    }
+
+    #[ink(message)]
+    fn set_fee(
+        &mut self,
+        fee: u64,
+    ) -> Result<(), RouterError> {
+        let factory = self.data().factory;
+        ensure!(fee > 1000, RouterError::InvalidFee);
+
+        let fee_owner = FactoryRef::fee_to(&factory);
+        ensure!(fee_owner != Self::env().caller(), RouterError::Unauthorized);
+        self.data().fee = fee;
+        Ok(())
     }
 }
 

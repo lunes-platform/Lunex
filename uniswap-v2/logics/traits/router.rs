@@ -171,6 +171,19 @@ pub trait Router {
         amount_out: Balance,
         path: Vec<AccountId>,
     ) -> Result<Vec<Balance>, RouterError>;
+    
+    #[ink(message)]
+    fn transfer_liquidity_amount_token(
+        &mut self,
+        token: AccountId,
+        to: AccountId
+    ) -> Result<(), RouterError>;
+
+    #[ink(message)]
+    fn set_fee(
+        &mut self,
+        fee: u64,
+    ) -> Result<(), RouterError>;
 }
 
 #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
@@ -198,6 +211,8 @@ pub enum RouterError {
     DivByZero,
     TransferFailed,
     InvalidPath,
+    InvalidFee,
+    Unauthorized,
 }
 
 macro_rules! impl_froms {

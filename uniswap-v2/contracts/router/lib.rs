@@ -19,7 +19,7 @@ pub mod router {
         pub fn new(factory: AccountId, wnative: AccountId) -> Self {
             let mut instance = Self::default();
             instance.router.factory = factory;
-            instance.router.wnative = wnative;
+            instance.router.wnative = wnative;                        
             instance
         }
     }
