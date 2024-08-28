@@ -1,4 +1,3 @@
-use ink::storage::Mapping;
 use openbrush::traits::{AccountId, Balance};
 
 
@@ -7,8 +6,7 @@ use openbrush::traits::{AccountId, Balance};
 pub struct Data {
     pub factory: AccountId,
     pub wnative: AccountId,
-    pub withdraw_balance : Mapping<AccountId, (AccountId,Balance)>,    
-    pub fee: u64,
+    pub fee: Balance,
 }
 
 impl Default for Data {
@@ -16,8 +14,7 @@ impl Default for Data {
         Self {
             factory: [0u8; 32].into(),
             wnative: [0u8; 32].into(),
-            withdraw_balance: Mapping::default(),
-            fee:997u64
+            fee:997u128,
         }
     }
 }

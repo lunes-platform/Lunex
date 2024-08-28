@@ -194,8 +194,7 @@ pub trait Router: Storage<data::Data> + Internal{
             Self::env().account_id(),
             deadline,
         )?;
-        //let _ = safe_transfer(token, to, amount_token);
-        self.data().withdraw_balance.insert(&to, &(token,amount_token));
+        safe_transfer(token, to, amount_token)?;        
         unwrap(&wnative, amount_native)?;
         safe_transfer_native(to, amount_native)?;
         Ok((amount_token, amount_native))
@@ -213,7 +212,7 @@ pub trait Router: Storage<data::Data> + Internal{
     ) -> Result<Vec<Balance>, RouterError> {
         let factory = self.data().factory;
 
-        let amounts = get_amounts_out(&factory, amount_in, &path)?;
+        let amounts = get_amounts_out(&factory, amount_in, &path,self.data().fee)?;
         ensure!(
             amounts[amounts.len() - 1] >= amount_out_min,
             RouterError::InsufficientOutputAmount
@@ -238,7 +237,7 @@ pub trait Router: Storage<data::Data> + Internal{
         deadline: u64,
     ) -> Result<Vec<Balance>, RouterError> {
         let factory = self.data().factory;
-        let amounts = get_amounts_in(&factory, amount_out, &path)?;
+        let amounts = get_amounts_in(&factory, amount_out, &path,self.data().fee)?;
         ensure!(
             amounts[0] <= amount_in_max,
             RouterError::ExcessiveInputAmount
@@ -266,7 +265,7 @@ pub trait Router: Storage<data::Data> + Internal{
         let received_value = Self::env().transferred_value();
         let wnative = self.data().wnative;
         ensure!(path[0] == wnative, RouterError::InvalidPath);
-        let amounts = get_amounts_out(&factory, received_value, &path)?;
+        let amounts = get_amounts_out(&factory, received_value, &path,self.data().fee)?;
         ensure!(
             amounts[amounts.len() - 1] >= amount_out_min,
             RouterError::InsufficientOutputAmount
@@ -294,7 +293,7 @@ pub trait Router: Storage<data::Data> + Internal{
 
         let wnative = self.data().wnative;
         ensure!(path[path.len() - 1] == wnative, RouterError::InvalidPath);
-        let amounts = get_amounts_in(&factory, amount_out, &path)?;
+        let amounts = get_amounts_in(&factory, amount_out, &path,self.data().fee)?;
         ensure!(
             amounts[0] <= amount_in_max,
             RouterError::ExcessiveInputAmount
@@ -324,7 +323,7 @@ pub trait Router: Storage<data::Data> + Internal{
 
         let wnative = self.data().wnative;
         ensure!(path[path.len() - 1] == wnative, RouterError::InvalidPath);
-        let amounts = get_amounts_out(&factory, amount_in, &path)?;
+        let amounts = get_amounts_out(&factory, amount_in, &path,self.data().fee)?;
         ensure!(
             amounts[amounts.len() - 1] >= amount_out_min,
             RouterError::InsufficientOutputAmount
@@ -354,7 +353,7 @@ pub trait Router: Storage<data::Data> + Internal{
         let received_value = Self::env().transferred_value();
 
         ensure!(path[0] == wnative, RouterError::InvalidPath);
-        let amounts = get_amounts_in(&factory, amount_out, &path)?;
+        let amounts = get_amounts_in(&factory, amount_out, &path,self.data().fee)?;
         ensure!(
             amounts[0] <= received_value,
             RouterError::ExcessiveInputAmount
@@ -387,7 +386,7 @@ pub trait Router: Storage<data::Data> + Internal{
         reserve_in: Balance,
         reserve_out: Balance,
     ) -> Result<Balance, RouterError> {
-        Ok(get_amount_out(amount_in, reserve_in, reserve_out)?)
+        Ok(get_amount_out(amount_in, reserve_in, reserve_out,self.data().fee)?)
     }
     #[ink(message)]
     fn get_amount_in(
@@ -396,7 +395,7 @@ pub trait Router: Storage<data::Data> + Internal{
         reserve_in: Balance,
         reserve_out: Balance,
     ) -> Result<Balance, RouterError> {
-        Ok(get_amount_in(amount_out, reserve_in, reserve_out)?)
+        Ok(get_amount_in(amount_out, reserve_in, reserve_out,self.data().fee)?)
     }
     #[ink(message)]
     fn get_amounts_out(
@@ -404,7 +403,7 @@ pub trait Router: Storage<data::Data> + Internal{
         amount_in: Balance,
         path: Vec<AccountId>,
     ) -> Result<Vec<Balance>, RouterError> {
-        Ok(get_amounts_out(&self.data().factory, amount_in, &path)?)
+        Ok(get_amounts_out(&self.data().factory, amount_in, &path,self.data().fee)?)
     }
 
     #[ink(message)]
@@ -413,34 +412,19 @@ pub trait Router: Storage<data::Data> + Internal{
         amount_out: Balance,
         path: Vec<AccountId>,
     ) -> Result<Vec<Balance>, RouterError> {
-        Ok(get_amounts_in(&self.data().factory, amount_out, &path)?)
-    }
-
-    #[ink(message)]
-    fn transfer_liquidity_amount_token(
-        &mut self,
-        token: AccountId,
-        to: AccountId
-    ) -> Result<(), RouterError> {
-        let amount_token = self.data().withdraw_balance.get(&to).unwrap().1;
-        if amount_token == 0 {
-            return Err(RouterError::InsufficientAAmount);
-        }        
-        safe_transfer(token, to, amount_token)?;
-        self.data().withdraw_balance.remove(&to);
-        Ok(())
+        Ok(get_amounts_in(&self.data().factory, amount_out, &path,self.data().fee)?)
     }
 
     #[ink(message)]
     fn set_fee(
         &mut self,
-        fee: u64,
+        fee: Balance,
     ) -> Result<(), RouterError> {
         let factory = self.data().factory;
-        ensure!(fee > 1000, RouterError::InvalidFee);
+        ensure!(fee <= 1000, RouterError::InvalidFee);
 
         let fee_owner = FactoryRef::fee_to(&factory);
-        ensure!(fee_owner != Self::env().caller(), RouterError::Unauthorized);
+        ensure!(fee_owner == Self::env().caller(), RouterError::Unauthorized);
         self.data().fee = fee;
         Ok(())
     }

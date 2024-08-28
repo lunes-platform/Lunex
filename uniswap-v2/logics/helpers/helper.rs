@@ -88,6 +88,7 @@ pub fn get_amount_out(
     amount_in: Balance,
     reserve_in: Balance,
     reserve_out: Balance,
+    fee: Balance,
 ) -> Result<Balance, HelperError> {
     ensure!(amount_in > 0, HelperError::InsufficientAmount);
     ensure!(
@@ -95,7 +96,7 @@ pub fn get_amount_out(
         HelperError::InsufficientLiquidity
     );
 
-    let amount_in_with_fee = casted_mul(amount_in, 997);
+    let amount_in_with_fee = casted_mul(amount_in, fee);
 
     let numerator = amount_in_with_fee
         .checked_mul(reserve_out.into())
@@ -118,6 +119,7 @@ pub fn get_amount_in(
     amount_out: Balance,
     reserve_in: Balance,
     reserve_out: Balance,
+    fee: Balance,
 ) -> Result<Balance, HelperError> {
     ensure!(amount_out > 0, HelperError::InsufficientAmount);
     ensure!(
@@ -133,7 +135,7 @@ pub fn get_amount_in(
         reserve_out
             .checked_sub(amount_out)
             .ok_or(HelperError::SubUnderFlow)?,
-        997,
+            fee,
     );
 
     let amount_in: Balance = numerator
@@ -151,6 +153,7 @@ pub fn get_amounts_out(
     factory: &AccountId,
     amount_in: Balance,
     path: &Vec<AccountId>,
+    fee: Balance,
 ) -> Result<Vec<Balance>, HelperError> {
     ensure!(path.len() >= 2, HelperError::InvalidPath);
 
@@ -158,7 +161,7 @@ pub fn get_amounts_out(
     amounts.push(amount_in);
     for i in 0..path.len() - 1 {
         let (reserve_in, reserve_out) = get_reserves(factory, path[i], path[i + 1])?;
-        amounts.push(get_amount_out(amounts[i], reserve_in, reserve_out)?);
+        amounts.push(get_amount_out(amounts[i], reserve_in, reserve_out,fee)?);
     }
 
     Ok(amounts)
@@ -168,6 +171,7 @@ pub fn get_amounts_in(
     factory: &AccountId,
     amount_out: Balance,
     path: &Vec<AccountId>,
+    fee: Balance,
 ) -> Result<Vec<Balance>, HelperError> {
     ensure!(path.len() >= 2, HelperError::InvalidPath);
 
@@ -178,7 +182,7 @@ pub fn get_amounts_in(
     amounts[path.len() - 1] = amount_out;
     for i in (0..path.len() - 1).rev() {
         let (reserve_in, reserve_out) = get_reserves(factory, path[i], path[i + 1])?;
-        amounts[i] = get_amount_in(amounts[i + 1], reserve_in, reserve_out)?;
+        amounts[i] = get_amount_in(amounts[i + 1], reserve_in, reserve_out,fee)?;
     }
 
     Ok(amounts)

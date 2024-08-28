@@ -171,18 +171,11 @@ pub trait Router {
         amount_out: Balance,
         path: Vec<AccountId>,
     ) -> Result<Vec<Balance>, RouterError>;
-    
-    #[ink(message)]
-    fn transfer_liquidity_amount_token(
-        &mut self,
-        token: AccountId,
-        to: AccountId
-    ) -> Result<(), RouterError>;
 
     #[ink(message)]
     fn set_fee(
         &mut self,
-        fee: u64,
+        fee: Balance,
     ) -> Result<(), RouterError>;
 }
 
