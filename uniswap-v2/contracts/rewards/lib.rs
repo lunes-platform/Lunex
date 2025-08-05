@@ -9,12 +9,7 @@ pub mod trading_rewards {
 
     /// Posição de trading de um usuário
     #[derive(scale::Decode, scale::Encode, Clone)]
-<<<<<<< HEAD
-    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, Debug, PartialEq, Eq))]
-    #[cfg_attr(feature = "std", derive(ink::storage::traits::StorageLayout))]
-=======
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, Debug, PartialEq, Eq, ink::storage::traits::StorageLayout))]
->>>>>>> refs/remotes/origin/main
     pub struct TradingPosition {
         pub total_volume: Balance,
         pub monthly_volume: Balance,
@@ -29,14 +24,8 @@ pub mod trading_rewards {
     }
 
     /// Tiers de trading baseados em volume
-<<<<<<< HEAD
-   #[derive(scale::Decode, scale::Encode, Clone, Copy,PartialEq)]
-    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, Debug, Eq))]
-    #[cfg_attr(feature = "std", derive(ink::storage::traits::StorageLayout))]
-=======
     #[derive(scale::Decode, scale::Encode, Clone, Copy, PartialEq, Eq)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, Debug, ink::storage::traits::StorageLayout))]
->>>>>>> refs/remotes/origin/main
     pub enum TradingTier {
         Bronze,   // 0 - 10,000 LUNES volume/mês
         Silver,   // 10,000 - 50,000 LUNES volume/mês  

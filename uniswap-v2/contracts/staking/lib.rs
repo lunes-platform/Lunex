@@ -25,7 +25,6 @@ pub mod staking_contract {
     use ink::storage::Mapping;
     use ink::prelude::string::String;
     use ink::prelude::vec::Vec;
-    use ink::prelude::format;
     use ink::prelude::string::ToString;
 
     /// Staking-related errors
@@ -516,13 +515,8 @@ pub mod staking_contract {
         governance_bonuses: Mapping<AccountId, Balance>,
         /// Contador de early adopters por tier
         early_adopter_counts: Mapping<EarlyAdopterTier, u32>,
-<<<<<<< HEAD
-        /// Campanhas ativas (acessadas raramente - otimizado com Lazy)
-         active_campaigns: Mapping<u32, Campaign>,
-=======
         /// Campanhas ativas (direct mapping para evitar storage collision)
         active_campaigns: Mapping<u32, Campaign>,
->>>>>>> refs/remotes/origin/main
         /// Próximo ID de campanha
         next_campaign_id: u32,
         /// Total de trading rewards distribuídos para stakers (métrica, acessada raramente)
@@ -563,12 +557,7 @@ pub mod staking_contract {
                 current_proposal_fee: constants::PROPOSAL_FEE, // Inicia com 1,000 LUNES
             };
             
-<<<<<<< HEAD
-            // Inicializa campos Lazy
-            contract.active_campaigns = Mapping::default();
-=======
             // Campos já inicializados diretamente no struct
->>>>>>> refs/remotes/origin/main
             
             // Inicializa tier multipliers
             contract.tier_multipliers.insert(&StakingTier::Bronze, &constants::BRONZE_REWARD_RATE);
