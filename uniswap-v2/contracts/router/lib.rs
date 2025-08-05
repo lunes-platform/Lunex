@@ -3,13 +3,9 @@
 #[ink::contract]
 pub mod router_contract {
     use psp22::PSP22Error;
-<<<<<<< HEAD
-    use ink::prelude::{vec, vec::Vec};
-=======
     use ink::prelude::vec::Vec;
     use ink::prelude::vec;
 
->>>>>>> refs/remotes/origin/main
     // ========================================
     // ROUTER CONTRACT - DEX OPERATIONS COORDINATOR
     // ========================================
