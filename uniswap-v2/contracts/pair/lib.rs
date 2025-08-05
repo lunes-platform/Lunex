@@ -86,6 +86,7 @@ pub mod pair_contract {
     /// Erros que podem ocorrer nas operações do Pair Contract
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+    #[allow(clippy::cast_possible_truncation)]
     pub enum PairError {
         /// Liquidez insuficiente para a operação
         InsufficientLiquidity,
@@ -254,7 +255,7 @@ pub mod pair_contract {
         /// Update reserves and cumulative prices
         fn update(&mut self, balance_0: Balance, balance_1: Balance) -> Result<(), PairError> {
             let block_timestamp = self.env().block_timestamp();
-            let time_elapsed = block_timestamp - self.block_timestamp_last;
+            let time_elapsed = block_timestamp.saturating_sub(self.block_timestamp_last);
 
             if time_elapsed > 0 && self.reserve_0 != 0 && self.reserve_1 != 0 {
                 // Overflow protection for price calculation
@@ -294,10 +295,10 @@ pub mod pair_contract {
         fn sqrt(y: u128) -> u128 {
             if y > 3 {
                 let mut z = y;
-                let mut x = y / 2 + 1;
+                let mut x = y.checked_div(2).and_then(|half| half.checked_add(1)).unwrap_or(1);
                 while x < z {
                     z = x;
-                    x = (y / x + x) / 2;
+                    x = y.checked_div(x).and_then(|div| div.checked_add(x)).and_then(|sum| sum.checked_div(2)).unwrap_or(x);
                 }
                 z
             } else if y != 0 {
@@ -362,11 +363,11 @@ pub mod pair_contract {
         fn mint_internal(&mut self, to: AccountId) -> Result<Balance, PairError> {
             // Simplified mint logic for TDD
             // In real implementation, this would get token balances from external contracts
-            let balance_0 = 1000; // Placeholder
-            let balance_1 = 1000; // Placeholder
+            let balance_0: Balance = 1000; // Placeholder
+            let balance_1: Balance = 1000; // Placeholder
             
-            let amount_0 = balance_0 - self.reserve_0;
-            let amount_1 = balance_1 - self.reserve_1;
+            let amount_0 = balance_0.checked_sub(self.reserve_0).ok_or(PairError::InsufficientLiquidity)?;
+            let amount_1 = balance_1.checked_sub(self.reserve_1).ok_or(PairError::InsufficientLiquidity)?;
             
             let total_supply = self.total_supply;
             let liquidity = if total_supply == 0 {
@@ -392,14 +393,15 @@ pub mod pair_contract {
             
             // Mint MINIMUM_LIQUIDITY to zero address se for primeiro mint
             if total_supply == 0 {
-                self.total_supply += constants::MINIMUM_LIQUIDITY;
+                self.total_supply = self.total_supply.checked_add(constants::MINIMUM_LIQUIDITY).ok_or(PairError::Overflow)?;
                 self.balances.insert(AccountId::from([0u8; 32]), &constants::MINIMUM_LIQUIDITY);
             }
             
             // Mint LP tokens to user
-            self.total_supply += liquidity;
+            self.total_supply = self.total_supply.checked_add(liquidity).ok_or(PairError::Overflow)?;
             let balance = self.balances.get(to).unwrap_or(0);
-            self.balances.insert(to, &(balance + liquidity));
+            let new_balance = balance.checked_add(liquidity).ok_or(PairError::Overflow)?;
+            self.balances.insert(to, &new_balance);
             self.update(balance_0, balance_1)?;
             
             self.env().emit_event(Mint {
@@ -456,8 +458,11 @@ pub mod pair_contract {
             self.total_supply = self.total_supply
                 .checked_sub(liquidity)
                 .ok_or(PairError::InsufficientLiquidityBurned)?;
-            self.balances.insert(self.env().account_id(), &(contract_balance - liquidity));
-            self.update(balance_0 - amount_0, balance_1 - amount_1)?;
+            let new_contract_balance = contract_balance.checked_sub(liquidity).ok_or(PairError::InsufficientLiquidityBurned)?;
+            self.balances.insert(self.env().account_id(), &new_contract_balance);
+            let new_balance_0 = balance_0.checked_sub(amount_0).ok_or(PairError::InsufficientLiquidity)?;
+            let new_balance_1 = balance_1.checked_sub(amount_1).ok_or(PairError::InsufficientLiquidity)?;
+            self.update(new_balance_0, new_balance_1)?;
             
             self.env().emit_event(Burn {
                 sender: self.env().caller(),
@@ -490,8 +495,8 @@ pub mod pair_contract {
             }
             
             // Simplified swap logic for TDD
-            let balance_0 = self.reserve_0 - amount_0_out;
-            let balance_1 = self.reserve_1 - amount_1_out;
+            let balance_0 = self.reserve_0.checked_sub(amount_0_out).ok_or(PairError::InsufficientLiquidity)?;
+            let balance_1 = self.reserve_1.checked_sub(amount_1_out).ok_or(PairError::InsufficientLiquidity)?;
             
             // Check K invariant with fee adjustment
             let balance_0_adjusted = balance_0.checked_mul(constants::FEE_DENOMINATOR).ok_or(PairError::Overflow)?;

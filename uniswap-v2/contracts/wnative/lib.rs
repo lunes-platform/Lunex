@@ -84,6 +84,8 @@ pub mod wnative_contract {
         ZeroAmount,
         /// Self transfer não permitido
         SelfTransfer,
+        /// Arithmetic overflow
+        Overflow,
     }
 
     // ========================================
@@ -182,7 +184,8 @@ pub mod wnative_contract {
             }
             
             // Decrementar allowance
-            self.allowances.insert((from, spender), &(current_allowance - value));
+            let new_allowance = current_allowance.checked_sub(value).ok_or(WnativeError::InsufficientAllowance)?;
+            self.allowances.insert((from, spender), &new_allowance);
             
             // Fazer transfer
             self._transfer(from, to, value)
@@ -228,7 +231,7 @@ pub mod wnative_contract {
             }
             
             // Mint WNATIVE tokens 1:1 com native tokens depositados
-            self._mint(caller, amount);
+            self._mint(caller, amount)?;
             
             // Emitir evento
             self.env().emit_event(Deposit {
@@ -258,7 +261,7 @@ pub mod wnative_contract {
             }
             
             // Queimar WNATIVE tokens primeiro
-            self._burn(caller, amount);
+            self._burn(caller, amount)?;
             
             // Transferir tokens nativos de volta
             self.env()
@@ -314,9 +317,11 @@ pub mod wnative_contract {
             }
             
             // Atualizar balances
-            self.balances.insert(from, &(from_balance - value));
+            let new_from_balance = from_balance.checked_sub(value).ok_or(WnativeError::InsufficientBalance)?;
+            self.balances.insert(from, &new_from_balance);
             let to_balance = self.balance_of(to);
-            self.balances.insert(to, &(to_balance + value));
+            let new_to_balance = to_balance.checked_add(value).ok_or(WnativeError::Overflow)?;
+            self.balances.insert(to, &new_to_balance);
             
             // Emitir evento
             self.env().emit_event(Transfer {
@@ -329,17 +334,18 @@ pub mod wnative_contract {
         }
 
         /// Mint tokens para um endereço
-        fn _mint(&mut self, to: AccountId, value: Balance) {
+        fn _mint(&mut self, to: AccountId, value: Balance) -> Result<(), WnativeError> {
             if value == 0 {
-                return;
+                return Ok(());
             }
             
             // Atualizar total supply
-            self.total_supply += value;
+            self.total_supply = self.total_supply.checked_add(value).ok_or(WnativeError::Overflow)?;
             
             // Atualizar balance
             let to_balance = self.balance_of(to);
-            self.balances.insert(to, &(to_balance + value));
+            let new_to_balance = to_balance.checked_add(value).ok_or(WnativeError::Overflow)?;
+            self.balances.insert(to, &new_to_balance);
             
             // Emitir evento
             self.env().emit_event(Transfer {
@@ -347,20 +353,23 @@ pub mod wnative_contract {
                 to: Some(to),
                 value,
             });
+            
+            Ok(())
         }
 
         /// Burn tokens de um endereço
-        fn _burn(&mut self, from: AccountId, value: Balance) {
+        fn _burn(&mut self, from: AccountId, value: Balance) -> Result<(), WnativeError> {
             if value == 0 {
-                return;
+                return Ok(());
             }
             
             // Atualizar total supply
-            self.total_supply -= value;
+            self.total_supply = self.total_supply.checked_sub(value).ok_or(WnativeError::InsufficientBalance)?;
             
             // Atualizar balance
             let from_balance = self.balance_of(from);
-            self.balances.insert(from, &(from_balance - value));
+            let new_from_balance = from_balance.checked_sub(value).ok_or(WnativeError::InsufficientBalance)?;
+            self.balances.insert(from, &new_from_balance);
             
             // Emitir evento
             self.env().emit_event(Transfer {
@@ -368,6 +377,8 @@ pub mod wnative_contract {
                 to: None,
                 value,
             });
+            
+            Ok(())
         }
     }
 

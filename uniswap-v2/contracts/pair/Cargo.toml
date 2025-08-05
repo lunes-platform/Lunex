@@ -5,7 +5,7 @@ authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 
 [dependencies]
-ink = { version = "5.1.1", default-features = false}
+ink = { version = "5.1.1", default-features = false, features = ["scale-info"] }
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2.3", default-features = false, features = ["derive"], optional = true }
@@ -19,10 +19,6 @@ psp22 = { version = "2.0", default-features = false, features = ["ink-as-depende
 [lib]
 name = "pair_contract"
 path = "lib.rs"
-crate-type = [
-    "cdylib",
-    "rlib"
-]
 
 [features]
 default = ["std"]
