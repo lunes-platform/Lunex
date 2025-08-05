@@ -13,10 +13,10 @@ scale-info = { version = "2.3", default-features = false, features = ["derive"],
 [lib]
 name = "staking_contract"
 path = "lib.rs"
-crate-type = [
-    "cdylib",
-    "rlib"
-]
+#crate-type = [
+#    "cdylib",
+#    "rlib"
+#]
 
 [features]
 default = ["std"]

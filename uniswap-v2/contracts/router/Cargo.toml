@@ -20,7 +20,7 @@ psp22 = { version = "2.0", default-features = false, features = ["ink-as-depende
 [lib]
 name = "router_contract"
 path = "lib.rs"
-crate-type = ["cdylib"]
+#crate-type = ["cdylib"]
 
 [features]
 default = ["std"]

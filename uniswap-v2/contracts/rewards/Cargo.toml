@@ -12,7 +12,7 @@ scale-info = { version = "2.3", default-features = false, features = ["derive"],
 [lib]
 name = "trading_rewards_contract"
 path = "lib.rs"
-crate-type = ["cdylib"]
+#crate-type = ["cdylib"]
 
 [features]
 default = ["std"]

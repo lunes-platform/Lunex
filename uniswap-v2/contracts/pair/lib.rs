@@ -1,5 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
-
+#![warn(clippy::arithmetic_side_effects)]
 #[ink::contract]
 pub mod pair_contract {
     use psp22::PSP22Error;

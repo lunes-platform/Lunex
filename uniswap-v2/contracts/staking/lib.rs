@@ -1,5 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
-
+#![warn(clippy::arithmetic_side_effects)]
 /// # Lunex Staking Contract
 ///
 /// This contract allows users to stake $LUNES (native token) and earn rewards.
@@ -21,9 +21,11 @@
 
 #[ink::contract]
 pub mod staking_contract {
+    use ink::prelude::format;
     use ink::storage::Mapping;
     use ink::prelude::string::String;
-
+    use ink::prelude::vec::Vec;
+    use ink::prelude::string::ToString; 
     /// Staking-related errors
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
@@ -513,7 +515,7 @@ pub mod staking_contract {
         /// Contador de early adopters por tier
         early_adopter_counts: Mapping<EarlyAdopterTier, u32>,
         /// Campanhas ativas (acessadas raramente - otimizado com Lazy)
-        active_campaigns: ink::storage::Lazy<Mapping<u32, Campaign>>,
+         active_campaigns: Mapping<u32, Campaign>,
         /// Próximo ID de campanha
         next_campaign_id: u32,
         /// Total de trading rewards distribuídos para stakers (métrica, acessada raramente)
@@ -548,14 +550,14 @@ pub mod staking_contract {
                 tier_multipliers: Mapping::default(),
                 governance_bonuses: Mapping::default(),
                 early_adopter_counts: Mapping::default(),
-                active_campaigns: ink::storage::Lazy::new(),
+                active_campaigns: Mapping::default(),
                 next_campaign_id: 1,
                 total_trading_rewards_distributed: 0,
                 current_proposal_fee: constants::PROPOSAL_FEE, // Inicia com 1,000 LUNES
             };
             
             // Inicializa campos Lazy
-            contract.active_campaigns.set(&Mapping::default());
+            contract.active_campaigns = Mapping::default();
             
             // Inicializa tier multipliers
             contract.tier_multipliers.insert(&StakingTier::Bronze, &constants::BRONZE_REWARD_RATE);

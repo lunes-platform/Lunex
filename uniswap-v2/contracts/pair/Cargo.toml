@@ -19,10 +19,10 @@ psp22 = { version = "2.0", default-features = false, features = ["ink-as-depende
 [lib]
 name = "pair_contract"
 path = "lib.rs"
-crate-type = [
-    "cdylib",
-    "rlib"
-]
+#crate-type = [
+#    "cdylib",
+#    "rlib"
+#]
 
 [features]
 default = ["std"]

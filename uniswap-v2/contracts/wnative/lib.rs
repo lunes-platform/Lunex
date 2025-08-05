@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
+#![warn(clippy::arithmetic_side_effects)]
 
 #[ink::contract]
 pub mod wnative_contract {

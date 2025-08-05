@@ -1,10 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
-
+#![warn(clippy::arithmetic_side_effects)]
 #[ink::contract]
 pub mod router_contract {
     use psp22::PSP22Error;
-    use ink::prelude::vec::Vec;
-
+    use ink::prelude::{vec, vec::Vec};
     // ========================================
     // ROUTER CONTRACT - DEX OPERATIONS COORDINATOR
     // ========================================

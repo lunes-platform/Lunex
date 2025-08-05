@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
+#![warn(clippy::arithmetic_side_effects)]
 
 #[ink::contract]
 pub mod trading_rewards {
@@ -9,7 +10,7 @@ pub mod trading_rewards {
     /// Posição de trading de um usuário
     #[derive(scale::Decode, scale::Encode, Clone)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, Debug, PartialEq, Eq))]
-    #[derive(ink::storage::traits::StorageLayout)]
+    #[cfg_attr(feature = "std", derive(ink::storage::traits::StorageLayout))]
     pub struct TradingPosition {
         pub total_volume: Balance,
         pub monthly_volume: Balance,
@@ -24,9 +25,9 @@ pub mod trading_rewards {
     }
 
     /// Tiers de trading baseados em volume
-    #[derive(scale::Decode, scale::Encode, Clone, Copy, PartialEq, Eq)]
-    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, Debug))]
-    #[derive(ink::storage::traits::StorageLayout)]
+   #[derive(scale::Decode, scale::Encode, Clone, Copy,PartialEq)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, Debug, Eq))]
+    #[cfg_attr(feature = "std", derive(ink::storage::traits::StorageLayout))]
     pub enum TradingTier {
         Bronze,   // 0 - 10,000 LUNES volume/mês
         Silver,   // 10,000 - 50,000 LUNES volume/mês  
@@ -419,7 +420,7 @@ pub mod trading_rewards {
                 let new_weight = self.calculate_tier_weight(new_tier, position.monthly_volume);
                 let _ = self.update_weight_cache(old_weight, new_weight);
             }
-            position.tier = new_tier;
+            position.tier = new_tier.clone();
 
             // Salva posição atualizada
             self.trading_positions.insert(&trader, &position);
@@ -428,15 +429,15 @@ pub mod trading_rewards {
             Self::env().emit_event(VolumeTracked {
                 trader: trader.clone(),
                 volume,
-                new_tier,
+                new_tier: new_tier.clone(),
                 timestamp: current_time,
             });
 
-            if old_tier != new_tier {
+            if old_tier != new_tier.clone() {
                 Self::env().emit_event(TierUpgraded {
                     trader,
-                    old_tier,
-                    new_tier,
+                    old_tier: old_tier.clone(),
+                    new_tier: new_tier.clone(),
                 });
             }
 
