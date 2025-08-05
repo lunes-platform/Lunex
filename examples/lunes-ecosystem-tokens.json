@@ -1,0 +1,52 @@
+{
+  "network": "testnet",
+  "adminSeed": "//Alice",
+  "skipVerification": false,
+  "dryRun": false,
+  "initialTokens": [
+    {
+      "address": "5GHU...USDT_CONTRACT_ADDRESS",
+      "reason": "USDT - Stablecoin principal do ecossistema para pares de trading estáveis"
+    },
+    {
+      "address": "5FHU...BTC_CONTRACT_ADDRESS", 
+      "reason": "Wrapped Bitcoin - Token BTC wrapeado para trading cross-chain"
+    },
+    {
+      "address": "5EHU...ETH_CONTRACT_ADDRESS",
+      "reason": "Wrapped Ethereum - Token ETH wrapeado para diversificação"
+    },
+    {
+      "address": "5DHU...LUNES_GOV_TOKEN_ADDRESS",
+      "reason": "Token de governança adicional do ecossistema Lunes"
+    },
+    {
+      "address": "5CHU...STABLE_COIN_ADDRESS",
+      "reason": "Stablecoin nativo do ecossistema Lunes (LUSD)"
+    }
+  ]
+}
+
+# INSTRUÇÕES DE USO:
+
+# 1. Substitua os endereços de exemplo pelos endereços reais dos tokens PSP22 do ecossistema Lunes
+# 2. Ajuste o network para "mainnet" quando fazer deploy em produção  
+# 3. Use uma seed real e segura no lugar de "//Alice"
+# 4. Execute o deploy com:
+#    npm run deploy:lunes testnet examples/lunes-ecosystem-tokens.json
+
+# TOKENS SUGERIDOS PARA O LANÇAMENTO:
+# - LUNES (nativo) - já incluído automaticamente
+# - USDT - Stablecoin para estabilidade
+# - BTC/WBTC - Bitcoin wrapeado
+# - ETH/WETH - Ethereum wrapeado  
+# - Stablecoin próprio do ecossistema
+# - Token de governança adicional
+# - Outros tokens importantes do ecossistema Lunes
+
+# BENEFÍCIOS:
+# ✅ DEX lança com liquidez imediata
+# ✅ Usuários têm pares importantes para negociar
+# ✅ Não precisa aguardar votações de governança  
+# ✅ Time pode focar no crescimento
+# ✅ Governança funciona para novos tokens futuros

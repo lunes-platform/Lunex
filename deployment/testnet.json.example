@@ -1,0 +1,77 @@
+{
+  "network": "testnet",
+  "deployedAt": "2024-01-15T10:30:00Z",
+  "deployer": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+  "contracts": {
+    "factory": {
+      "name": "factory",
+      "address": "5D5PhZQNJzcJXVBxwJxZcsutjKPqUPydrvpu6HeiBfMae2Qu",
+      "codeHash": "0x...",
+      "abi": null
+    },
+    "router": {
+      "name": "router",
+      "address": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+      "codeHash": "0x...",
+      "abi": null
+    },
+    "psp22": {
+      "name": "psp22",
+      "address": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+      "codeHash": "0x...",
+      "abi": null
+    },
+    "wnative": {
+      "name": "wnative",
+      "address": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+      "codeHash": "0x...",
+      "abi": null
+    },
+    "staking": {
+      "name": "staking",
+      "address": "5GKoR4ckjqvbpPPgNDQD2AjAGGLdS1VZvh8JDJLGaKVyX7qK",
+      "codeHash": "0x...",
+      "abi": null
+    },
+    "rewards": {
+      "name": "rewards",
+      "address": "5Dp6EHYLr8JFrSECdPKwE7cjr9Mw8zUTZZzVhZjXZjPj9qXX",
+      "codeHash": "0x...",
+      "abi": null
+    }
+  },
+  "expectedConfigurations": {
+    "factory": {
+      "feeTo": null,
+      "feeToSetter": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+    },
+    "router": {
+      "factory": "5D5PhZQNJzcJXVBxwJxZcsutjKPqUPydrvpu6HeiBfMae2Qu",
+      "wnative": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y"
+    },
+    "staking": {
+      "owner": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+      "treasury": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+      "tradingRewardsContract": "5Dp6EHYLr8JFrSECdPKwE7cjr9Mw8zUTZZzVhZjXZjPj9qXX"
+    },
+    "rewards": {
+      "admin": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+      "router": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+      "stakingContract": "5GKoR4ckjqvbpPPgNDQD2AjAGGLdS1VZvh8JDJLGaKVyX7qK"
+    }
+  },
+  "initialTokens": [
+    {
+      "name": "Test Token A",
+      "address": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+      "symbol": "TTA",
+      "decimals": 8,
+      "listedBy": "admin"
+    }
+  ],
+  "verification": {
+    "lastChecked": null,
+    "status": "pending",
+    "issues": []
+  }
+}

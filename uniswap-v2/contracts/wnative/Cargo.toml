@@ -5,13 +5,16 @@ authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 
 [dependencies]
-ink = { version = "4.0.0", default-features = false}
+ink = { version = "5.1.1", default-features = false}
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2.3", default-features = false, features = ["derive"], optional = true }
 
-openbrush = { git = "https://github.com/727-Ventures/openbrush-contracts", version = "3.0.0", default-features = false, features = ["psp22"] }
-uniswap_v2 = { path = "../../logics", default-features = false }
+# PSP22 v2.0 implementation (Cardinal-Cryptography)
+psp22 = { version = "2.0", default-features = false, features = ["ink-as-dependency"] }
+
+# Dependência temporariamente removida para permitir TDD isolado
+# uniswap_v2 = { path = "../../logics", default-features = false }
 
 [lib]
 name = "wnative_contract"
@@ -25,13 +28,8 @@ std = [
     "scale/std",
     "scale-info",
     "scale-info/std",
-    "openbrush/std",
-    "uniswap_v2/std"
+    "psp22/std",
+    # "uniswap_v2/std"  # Removido temporariamente para TDD isolado
 ]
 ink-as-dependency = []
 
-[profile.dev]
-overflow-checks = false
-
-[profile.release]
-overflow-checks = false

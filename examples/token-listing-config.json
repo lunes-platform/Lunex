@@ -1,0 +1,21 @@
+{
+  "network": "testnet",
+  "proposerSeed": "//Alice",
+  "stakingContract": "5GHU...CONTRACT_ADDRESS_HERE",
+  "factoryContract": "5FHU...CONTRACT_ADDRESS_HERE", 
+  "routerContract": "5EHU...CONTRACT_ADDRESS_HERE",
+  "token": {
+    "address": "5DHU...TOKEN_CONTRACT_ADDRESS_HERE",
+    "name": "Example Token",
+    "symbol": "EXT",
+    "decimals": 8,
+    "description": "Token de exemplo para demonstrar o processo de listagem na Lunex DEX. Este token oferece funcionalidades inovadoras para a comunidade.",
+    "website": "https://example-token.com",
+    "whitepaper": "https://example-token.com/whitepaper.pdf",
+    "audit": "https://example-token.com/audit-report.pdf"
+  },
+  "initialLiquidity": {
+    "tokenAmount": "1000000000000000",
+    "lunesAmount": "10000000000000"
+  }
+}

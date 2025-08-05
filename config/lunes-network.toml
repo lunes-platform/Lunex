@@ -1,0 +1,90 @@
+# Configuração da Rede Lunes para Lunex DEX
+# Baseado em: https://github.com/lunes-platform/lunes-nightly
+
+[network]
+name = "Lunes Network"
+native_token = "LUNES"
+decimals = 8
+symbol = "LUNES"
+
+[endpoints]
+# Testnet Endpoints
+testnet_ws = "wss://ws-test.lunes.io"
+testnet_rpc = "https://rpc-test.lunes.io"
+
+# Mainnet Endpoints
+mainnet_ws_primary = "wss://ws.lunes.io"
+mainnet_ws_backup_1 = "wss://ws-lunes-main-01.lunes.io"
+mainnet_ws_backup_2 = "wss://ws-lunes-main-02.lunes.io"
+mainnet_ws_archive = "wss://ws-archive.lunes.io"
+
+mainnet_rpc_primary = "https://rpc.lunes.io"
+mainnet_rpc_backup_1 = "https://rpc-lunes-main-01.lunes.io"
+mainnet_rpc_backup_2 = "https://rpc-lunes-main-02.lunes.io"
+
+[staking]
+# Configurações específicas para staking de LUNES
+min_stake_amount = "100000000000"  # 1000 LUNES em unidades mínimas (8 decimais)
+min_duration_blocks = 302400           # 7 dias (~2 sec por bloco)
+max_duration_blocks = 15724800         # 365 dias
+base_reward_rate = 1000                # 10% anual em basis points
+early_penalty_rate = 500               # 5% penalty em basis points
+max_stakers = 10000
+
+[governance]
+# Configurações para governança de listagem de projetos
+voting_period_blocks = 604800          # 14 dias
+min_proposal_power = "1000000000000"  # 10,000 LUNES (8 decimais)
+proposal_execution_delay = 86400       # 1 dia em blocos
+min_quorum = "100000000000000"  # 1,000,000 LUNES para quorum mínimo (8 decimais)
+
+[trading_rewards]
+# Sistema de rewards para traders ativos
+bronze_threshold = "0"                  # 0 LUNES volume/mês
+silver_threshold = "1000000000000"      # 10,000 LUNES volume/mês (8 decimais)
+gold_threshold = "5000000000000"        # 50,000 LUNES volume/mês (8 decimais)
+platinum_threshold = "20000000000000"   # 200,000 LUNES volume/mês (8 decimais)
+bronze_multiplier = 100                 # 1.0x
+silver_multiplier = 120                 # 1.2x 
+gold_multiplier = 150                   # 1.5x
+platinum_multiplier = 200               # 2.0x
+monthly_reset_period = 2592000          # 30 dias em segundos
+
+[dex]
+# Nova estrutura de fees (0.5% total)
+total_fee_rate = 50                    # 0.5% em basis points
+lp_fee_share = 60                      # 60% para LPs (0.3%)
+protocol_fee_share = 20                # 20% para desenvolvimento (0.1%)
+rewards_fee_share = 20                 # 20% para trading rewards (0.1%)
+minimum_liquidity = 100                # Lock permanente mínimo
+max_price_impact = 500                 # 5% máximo de impacto no preço
+
+[security]
+# Configurações de segurança
+reentrancy_protection = true
+overflow_protection = true
+access_control = true
+deadline_validation = true
+slippage_protection = true
+k_invariant_check = true
+
+[contracts]
+# Endereços dos contratos (a serem preenchidos após deploy)
+factory = ""
+router = ""
+wnative = ""
+staking = ""
+governance = ""
+
+[deployment]
+# Configurações para deploy
+target_network = "testnet"  # "testnet" ou "mainnet"
+deployment_account = ""
+gas_limit = 5000000
+storage_deposit_limit = 1000000000  # 10 LUNES (8 decimais)
+
+[monitoring]
+# Endpoints para monitoramento
+health_check_interval = 30  # segundos
+max_retry_attempts = 3
+timeout_seconds = 30
