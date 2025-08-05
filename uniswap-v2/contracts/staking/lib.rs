@@ -25,7 +25,9 @@ pub mod staking_contract {
     use ink::storage::Mapping;
     use ink::prelude::string::String;
     use ink::prelude::vec::Vec;
-    use ink::prelude::string::ToString; 
+    use ink::prelude::format;
+    use ink::prelude::string::ToString;
+
     /// Staking-related errors
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
@@ -514,8 +516,13 @@ pub mod staking_contract {
         governance_bonuses: Mapping<AccountId, Balance>,
         /// Contador de early adopters por tier
         early_adopter_counts: Mapping<EarlyAdopterTier, u32>,
+<<<<<<< HEAD
         /// Campanhas ativas (acessadas raramente - otimizado com Lazy)
          active_campaigns: Mapping<u32, Campaign>,
+=======
+        /// Campanhas ativas (direct mapping para evitar storage collision)
+        active_campaigns: Mapping<u32, Campaign>,
+>>>>>>> refs/remotes/origin/main
         /// Próximo ID de campanha
         next_campaign_id: u32,
         /// Total de trading rewards distribuídos para stakers (métrica, acessada raramente)
@@ -556,8 +563,12 @@ pub mod staking_contract {
                 current_proposal_fee: constants::PROPOSAL_FEE, // Inicia com 1,000 LUNES
             };
             
+<<<<<<< HEAD
             // Inicializa campos Lazy
             contract.active_campaigns = Mapping::default();
+=======
+            // Campos já inicializados diretamente no struct
+>>>>>>> refs/remotes/origin/main
             
             // Inicializa tier multipliers
             contract.tier_multipliers.insert(&StakingTier::Bronze, &constants::BRONZE_REWARD_RATE);
@@ -661,8 +672,8 @@ pub mod staking_contract {
             // Update state
             self.stakes.insert(&caller, &stake_position);
             self.staker_addresses.insert(&self.staker_index, &caller);
-            self.staker_index += 1;
-            self.active_stakers += 1;
+            self.staker_index = self.staker_index.checked_add(1).ok_or(StakingError::Overflow)?;
+            self.active_stakers = self.active_stakers.checked_add(1).ok_or(StakingError::Overflow)?;
             self.total_staked = self.total_staked.checked_add(amount)
                 .ok_or(StakingError::Overflow)?;
             
@@ -704,7 +715,7 @@ pub mod staking_contract {
             // Update state
             stake.active = false;
             self.stakes.insert(&caller, &stake);
-            self.active_stakers -= 1;
+            self.active_stakers = self.active_stakers.checked_sub(1).ok_or(StakingError::Overflow)?;
             self.total_staked = self.total_staked.checked_sub(stake.amount)
                 .ok_or(StakingError::Overflow)?;
             self.total_rewards_distributed = self.total_rewards_distributed.checked_add(rewards)
@@ -1383,14 +1394,14 @@ pub mod staking_contract {
             let amount_to_distribute = self.trading_rewards_pool;
             let start = start_index.unwrap_or(0);
             let max_batch = batch_size.unwrap_or(100).min(100); // Limita a 100 para evitar gas excessivo
-            let end = (start + max_batch).min(self.staker_index);
+            let end = start.checked_add(max_batch).unwrap_or(self.staker_index).min(self.staker_index);
             
             let mut distributed_count = 0u32;
             let mut processed_count = 0u32;
             
             // Distribui proporcionalmente para o lote de stakers
             for i in start..end {
-                processed_count += 1;
+                processed_count = processed_count.checked_add(1).ok_or(StakingError::Overflow)?;
                 
                 if let Some(staker) = self.staker_addresses.get(&i) {
                     if let Some(mut stake) = self.stakes.get(&staker) {
@@ -1408,7 +1419,7 @@ pub mod staking_contract {
                                     .ok_or(StakingError::Overflow)?;
                                 
                                 self.stakes.insert(&staker, &stake);
-                                distributed_count += 1;
+                                distributed_count = distributed_count.checked_add(1).ok_or(StakingError::Overflow)?;
                             }
                         }
                     }
@@ -1469,7 +1480,8 @@ pub mod staking_contract {
                     if stake.governance_participation % constants::MIN_VOTES_FOR_BONUS == 0 {
                         let bonus = constants::VOTING_BONUS;
                         let current_bonus = self.governance_bonuses.get(&voter).unwrap_or(0);
-                        self.governance_bonuses.insert(&voter, &(current_bonus + bonus));
+                        let new_bonus = current_bonus.checked_add(bonus).ok_or(StakingError::Overflow)?;
+                        self.governance_bonuses.insert(&voter, &new_bonus);
                         
                         // Emit event
                         self.env().emit_event(GovernanceBonusAwarded {
@@ -1492,7 +1504,8 @@ pub mod staking_contract {
             
             let bonus = constants::PROPOSAL_BONUS;
             let current_bonus = self.governance_bonuses.get(&proposer).unwrap_or(0);
-            self.governance_bonuses.insert(&proposer, &(current_bonus + bonus));
+            let new_bonus = current_bonus.checked_add(bonus).ok_or(StakingError::Overflow)?;
+            self.governance_bonuses.insert(&proposer, &new_bonus);
             
             // Emit event
             self.env().emit_event(GovernanceBonusAwarded {
@@ -1512,7 +1525,8 @@ pub mod staking_contract {
             
             let bonus = constants::IMPLEMENTATION_BONUS;
             let current_bonus = self.governance_bonuses.get(&proposer).unwrap_or(0);
-            self.governance_bonuses.insert(&proposer, &(current_bonus + bonus));
+            let new_bonus = current_bonus.checked_add(bonus).ok_or(StakingError::Overflow)?;
+            self.governance_bonuses.insert(&proposer, &new_bonus);
             
             // Emit event
             self.env().emit_event(GovernanceBonusAwarded {
@@ -1608,7 +1622,7 @@ pub mod staking_contract {
             
             // Calculate base rewards
             // Formula: (amount * rate * time) / (basis_points * year_in_blocks)
-            let year_in_blocks = 365 * 24 * 60 * 30; // Approximate blocks per year
+            let year_in_blocks: u128 = 365 * 24 * 60 * 30; // Approximate blocks per year
             
             let base_rewards = (stake.amount as u128)
                 .checked_mul(base_rate as u128)
@@ -1617,7 +1631,7 @@ pub mod staking_contract {
                 .ok_or(StakingError::Overflow)?
                 .checked_div(constants::BASIS_POINTS as u128)
                 .ok_or(StakingError::Overflow)?
-                .checked_div(year_in_blocks as u128)
+                .checked_div(year_in_blocks)
                 .ok_or(StakingError::Overflow)? as Balance;
             
             // Apply quantity multiplier
@@ -1629,7 +1643,7 @@ pub mod staking_contract {
             
             // Apply early adopter bonus
             let final_rewards = rewards_with_quantity
-                .checked_mul((constants::BASIS_POINTS + early_adopter_bonus) as Balance)
+                .checked_mul(constants::BASIS_POINTS.checked_add(early_adopter_bonus).ok_or(StakingError::Overflow)? as Balance)
                 .ok_or(StakingError::Overflow)?
                 .checked_div(constants::BASIS_POINTS as Balance)
                 .ok_or(StakingError::Overflow)?;
@@ -1659,13 +1673,16 @@ pub mod staking_contract {
             let top_1000_count = self.early_adopter_counts.get(&EarlyAdopterTier::Top1000).unwrap_or(0);
 
             if top_100_count < 100 {
-                self.early_adopter_counts.insert(&EarlyAdopterTier::Top100, &(top_100_count + 1));
+                let new_count = top_100_count.saturating_add(1);
+                self.early_adopter_counts.insert(&EarlyAdopterTier::Top100, &new_count);
                 EarlyAdopterTier::Top100
             } else if top_500_count < 500 {
-                self.early_adopter_counts.insert(&EarlyAdopterTier::Top500, &(top_500_count + 1));
+                let new_count = top_500_count.saturating_add(1);
+                self.early_adopter_counts.insert(&EarlyAdopterTier::Top500, &new_count);
                 EarlyAdopterTier::Top500
             } else if top_1000_count < 1000 {
-                self.early_adopter_counts.insert(&EarlyAdopterTier::Top1000, &(top_1000_count + 1));
+                let new_count = top_1000_count.saturating_add(1);
+                self.early_adopter_counts.insert(&EarlyAdopterTier::Top1000, &new_count);
                 EarlyAdopterTier::Top1000
             } else {
                 EarlyAdopterTier::None
@@ -1717,7 +1734,7 @@ pub mod staking_contract {
 
         /// Calcula peso do staker para distribuição de trading rewards
         fn calculate_staker_weight(&self, stake: &StakePosition) -> Balance {
-            let tier_multiplier = match stake.tier {
+            let tier_multiplier: Balance = match stake.tier {
                 StakingTier::Bronze => 100,
                 StakingTier::Silver => 120,
                 StakingTier::Gold => 150,
@@ -1727,7 +1744,7 @@ pub mod staking_contract {
             let quantity_multiplier = self.get_quantity_multiplier(stake.amount);
 
             stake.amount
-                .checked_mul(tier_multiplier as Balance)
+                .checked_mul(tier_multiplier)
                 .unwrap_or(0)
                 .checked_mul(quantity_multiplier as Balance)
                 .unwrap_or(0)

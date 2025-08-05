@@ -3,7 +3,13 @@
 #[ink::contract]
 pub mod router_contract {
     use psp22::PSP22Error;
+<<<<<<< HEAD
     use ink::prelude::{vec, vec::Vec};
+=======
+    use ink::prelude::vec::Vec;
+    use ink::prelude::vec;
+
+>>>>>>> refs/remotes/origin/main
     // ========================================
     // ROUTER CONTRACT - DEX OPERATIONS COORDINATOR
     // ========================================
@@ -71,6 +77,7 @@ pub mod router_contract {
     /// Erros que podem ocorrer nas operações do Router
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+    #[allow(clippy::cast_possible_truncation)]
     pub enum RouterError {
         /// Deadline da transação expirou
         Expired,
@@ -441,11 +448,11 @@ pub mod router_contract {
             }
             
             let mut x = value;
-            let mut y = (value + 1) / 2;
+            let mut y = value.checked_add(1).and_then(|sum| sum.checked_div(2)).unwrap_or(1);
             
             while y < x {
                 x = y;
-                y = (value / x + x) / 2;
+                y = value.checked_div(x).and_then(|div| div.checked_add(x)).and_then(|sum| sum.checked_div(2)).unwrap_or(x);
             }
             
             x

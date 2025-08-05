@@ -9,8 +9,12 @@ pub mod trading_rewards {
 
     /// Posição de trading de um usuário
     #[derive(scale::Decode, scale::Encode, Clone)]
+<<<<<<< HEAD
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, Debug, PartialEq, Eq))]
     #[cfg_attr(feature = "std", derive(ink::storage::traits::StorageLayout))]
+=======
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, Debug, PartialEq, Eq, ink::storage::traits::StorageLayout))]
+>>>>>>> refs/remotes/origin/main
     pub struct TradingPosition {
         pub total_volume: Balance,
         pub monthly_volume: Balance,
@@ -25,9 +29,14 @@ pub mod trading_rewards {
     }
 
     /// Tiers de trading baseados em volume
+<<<<<<< HEAD
    #[derive(scale::Decode, scale::Encode, Clone, Copy,PartialEq)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, Debug, Eq))]
     #[cfg_attr(feature = "std", derive(ink::storage::traits::StorageLayout))]
+=======
+    #[derive(scale::Decode, scale::Encode, Clone, Copy, PartialEq, Eq)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, Debug, ink::storage::traits::StorageLayout))]
+>>>>>>> refs/remotes/origin/main
     pub enum TradingTier {
         Bronze,   // 0 - 10,000 LUNES volume/mês
         Silver,   // 10,000 - 50,000 LUNES volume/mês  
@@ -324,40 +333,44 @@ pub mod trading_rewards {
             let current_time = Self::env().block_timestamp();
             
             // Busca ou cria posição do trader
-            let mut position = self.trading_positions.get(&trader).unwrap_or_else(|| {
-                // Adiciona ao mapeamento de traders ativos se novo (O(1) operation)
-                if !self.active_traders.get(&trader).unwrap_or(false) {
-                    self.active_traders.insert(&trader, &true);
-                    self.active_trader_count += 1;
+            let mut position = match self.trading_positions.get(&trader) {
+                Some(pos) => pos,
+                None => {
+                    // Adiciona ao mapeamento de traders ativos se novo (O(1) operation)
+                    if !self.active_traders.get(&trader).unwrap_or(false) {
+                        self.active_traders.insert(&trader, &true);
+                        self.active_trader_count = self.active_trader_count.checked_add(1)
+                            .ok_or(TradingRewardsError::Overflow)?;
+                    }
+                    
+                    TradingPosition {
+                        total_volume: 0,
+                        monthly_volume: 0,
+                        daily_volume: 0,
+                        last_trade_timestamp: 0, // Para novos usuários, define como 0 para passar no cooldown
+                        last_daily_reset: current_time,
+                        tier: TradingTier::Bronze,
+                        pending_rewards: 0,
+                        claimed_rewards: 0,
+                        trade_count: 0,
+                        suspicious_flags: constants::SUSPICIOUS_FLAG_NONE,
+                    }
                 }
-                
-                TradingPosition {
-                    total_volume: 0,
-                    monthly_volume: 0,
-                    daily_volume: 0,
-                    last_trade_timestamp: 0, // Para novos usuários, define como 0 para passar no cooldown
-                    last_daily_reset: current_time,
-                    tier: TradingTier::Bronze,
-                    pending_rewards: 0,
-                    claimed_rewards: 0,
-                    trade_count: 0,
-                    suspicious_flags: constants::SUSPICIOUS_FLAG_NONE,
-                }
-            });
+            };
 
             // === MAIS VALIDAÇÕES ANTI-FRAUDE ===
             
             // 3. Cooldown entre trades - usando parâmetro configurável
             if position.last_trade_timestamp > 0 && 
                current_time > position.last_trade_timestamp &&
-               current_time - position.last_trade_timestamp < self.trade_cooldown {
+               current_time.checked_sub(position.last_trade_timestamp).unwrap_or(0) < self.trade_cooldown {
                 self.release_reentrancy_guard();
                 return Err(TradingRewardsError::TradeCooldownActive);
             }
             
             // 4. Reset diário se necessário
             if current_time > position.last_daily_reset &&
-               current_time - position.last_daily_reset > constants::DAILY_RESET_PERIOD {
+               current_time.checked_sub(position.last_daily_reset).unwrap_or(0) > constants::DAILY_RESET_PERIOD {
                 position.daily_volume = 0;
                 position.last_daily_reset = current_time;
             }
@@ -379,7 +392,7 @@ pub mod trading_rewards {
             // Reset mensal se necessário
             if position.last_trade_timestamp > 0 &&
                current_time > position.last_trade_timestamp &&
-               current_time - position.last_trade_timestamp > constants::MONTHLY_RESET_PERIOD {
+               current_time.checked_sub(position.last_trade_timestamp).unwrap_or(0) > constants::MONTHLY_RESET_PERIOD {
                 position.monthly_volume = 0;
             }
 
@@ -681,12 +694,13 @@ pub mod trading_rewards {
             let current_time = Self::env().block_timestamp();
             
             // Finaliza época atual se houver
-            if self.current_epoch > 0 && current_time >= self.epoch_start_time + self.epoch_duration {
+            if self.current_epoch > 0 && current_time >= self.epoch_start_time.checked_add(self.epoch_duration).unwrap_or(u64::MAX) {
                 self.finalize_current_epoch()?;
             }
             
             // Inicia nova época
-            self.current_epoch += 1;
+            self.current_epoch = self.current_epoch.checked_add(1)
+                .ok_or(TradingRewardsError::Overflow)?;
             self.epoch_start_time = current_time;
             
             Self::env().emit_event(EpochStarted {
@@ -930,7 +944,7 @@ pub mod trading_rewards {
             const CACHE_VALIDITY_PERIOD: u64 = 300; // 5 minutos
             
             // Se cache é válido, usa valor cached
-            if current_time - self.weight_cache_timestamp < CACHE_VALIDITY_PERIOD {
+            if current_time.checked_sub(self.weight_cache_timestamp).unwrap_or(0) < CACHE_VALIDITY_PERIOD {
                 return Ok(self.cached_total_weight);
             }
             

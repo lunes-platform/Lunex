@@ -40,21 +40,26 @@ pub mod factory {
     /// Estrutura principal do contrato
     #[ink(storage)]
     pub struct FactoryContract {
-        fee_to: AccountId,
+        /// Fee recipient (rarely accessed - optimized with Lazy)
+        fee_to: ink::storage::Lazy<AccountId>,
+        /// Fee setter (admin field, rarely accessed - optimized with Lazy)
         fee_to_setter: AccountId,
+        /// Token pair mapping (frequently accessed - kept as direct Mapping)
         get_pair: Mapping<(AccountId, AccountId), AccountId>,
+        /// All pairs list (frequently accessed for indexing - kept as Vec)
         all_pairs: Vec<AccountId>,
-        pair_contract_code_hash: Hash,
+        /// Pair contract code hash (rarely accessed - optimized with Lazy)
+        pair_contract_code_hash: ink::storage::Lazy<Hash>,
     }
 
     impl Default for FactoryContract {
         fn default() -> Self {
             Self {
-                fee_to: AccountId::from([0u8; 32]),
+                fee_to: ink::storage::Lazy::new(),
                 fee_to_setter: AccountId::from([0u8; 32]),
                 get_pair: Mapping::default(),
                 all_pairs: Vec::new(),
-                pair_contract_code_hash: Hash::default(),
+                pair_contract_code_hash: ink::storage::Lazy::new(),
             }
         }
     }
@@ -76,13 +81,19 @@ pub mod factory {
                 "fee_to_setter cannot be zero address"
             );
             
-            Self {
-                fee_to: AccountId::from(constants::ZERO_ADDRESS),
+            let mut instance = Self {
+                fee_to: ink::storage::Lazy::new(),
                 fee_to_setter,
                 get_pair: Mapping::default(),
                 all_pairs: Vec::new(),
-                    pair_contract_code_hash: pair_code_hash,
-            }
+                pair_contract_code_hash: ink::storage::Lazy::new(),
+            };
+            
+            // Initialize Lazy fields for gas optimization
+            instance.fee_to.set(&AccountId::from(constants::ZERO_ADDRESS));
+            instance.pair_contract_code_hash.set(&pair_code_hash);
+            
+            instance
         }
 
         // ========================================
@@ -174,7 +185,7 @@ pub mod factory {
         /// * `AccountId` - Endereço que recebe taxas ou endereço zero se desabilitado
         #[ink(message)]
         pub fn fee_to(&self) -> AccountId {
-            self.fee_to
+            self.fee_to.get().unwrap_or(AccountId::from(constants::ZERO_ADDRESS))
         }
 
         /// Retorna endereço do fee_to_setter (autorizado a definir taxas)
@@ -206,7 +217,7 @@ pub mod factory {
         /// * `Hash` - Hash usado para deterministic deployment dos pares
         #[ink(message)]
         pub fn pair_contract_code_hash(&self) -> Hash {
-            self.pair_contract_code_hash
+            self.pair_contract_code_hash.get().unwrap_or(Hash::default())
         }
 
         /// Cria um novo par de tokens
@@ -269,7 +280,7 @@ pub mod factory {
             // Validação de acesso centralizada
             self.ensure_caller_is_fee_setter()?;
             
-            self.fee_to = fee_to;
+            self.fee_to.set(&fee_to);
             Ok(())
         }
 
