@@ -1,0 +1,27 @@
+{
+  "network": "testnet",
+  "adminSeed": "//Alice",
+  "stakingContract": "5GHU...STAKING_CONTRACT_ADDRESS",
+  "tokens": [
+    {
+      "address": "5ABC123...USDT_CONTRACT_ADDRESS",
+      "reason": "USDT - Tether USD Stablecoin principal do ecossistema"
+    },
+    {
+      "address": "5DEF456...WBTC_CONTRACT_ADDRESS",
+      "reason": "WBTC - Wrapped Bitcoin para trading cross-chain"
+    },
+    {
+      "address": "5GHI789...WETH_CONTRACT_ADDRESS",
+      "reason": "WETH - Wrapped Ethereum para diversificação de portfolio"
+    },
+    {
+      "address": "5JKL012...LUSD_CONTRACT_ADDRESS",
+      "reason": "LUSD - Stablecoin nativo do ecossistema Lunes"
+    },
+    {
+      "address": "5MNO345...GOV_CONTRACT_ADDRESS",
+      "reason": "GOV - Token de governança adicional do ecossistema"
+    }
+  ]
+}
