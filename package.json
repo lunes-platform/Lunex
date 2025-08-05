@@ -24,8 +24,8 @@
     "@polkadot/util": "^12.3.2"
   },
   "scripts": {
-    "compile": "typechain-compiler --toolchain nightly-2023-01-10",
-    "compile:release": "typechain-compiler --release --toolchain nightly-2023-01-10",
+    "compile": "typechain-compiler --toolchain nightly",
+    "compile:release": "typechain-compiler --release --toolchain nightly",
     "compile:all": "cd uniswap-v2/contracts/factory && cargo contract build --release && cd ../pair && cargo contract build --release && cd ../router && cargo contract build --release && cd ../rewards && cargo contract build --release && cd ../staking && cargo contract build --release && cd ../wnative && cargo contract build --release",
     "test:typechain": "jest --testPathPattern \".spec.ts$\" --runInBand",
     "test:single": "jest",
